@@ -1,7 +1,8 @@
 (function () {
   'use strict';
 
-  var nsga = moea.nsga.main.execute;
+  var nsga = moea.nsga.main.execute,
+      spea = moea.spea.main.execute;
 
   var instance = {
     objectives: 3,
@@ -84,6 +85,23 @@
     return _.map(_.uniqWith(solutions, _.isEqual), solutionToObject);
   }
 
+  function solveWithSpea() {
+    var solutions = spea({
+      populationSize: 100,
+      archiveSize: 100,
+      randomize: generateRandom,
+      objectives: getObjectiveArray(),
+      numberOfGenerations: 50,
+      crossover: {rate: 0.5, method: moea.help.binary.singlePointCrossover},
+      mutation: {rate: 1 / instance.objects, method: moea.help.binary.mutate}
+    });
+
+    return _.map(_.uniqWith(solutions, _.isEqual), solutionToObject);
+  }
+
   window.moea = window.moea || {};
-  _.set(moea, 'problem.knapsack.solveWithNsga', solveWithNsga);
+  _.set(moea, 'problem.knapsack', {
+    solveWithNsga: solveWithNsga,
+    solveWithSpea: solveWithSpea
+  });
 }());

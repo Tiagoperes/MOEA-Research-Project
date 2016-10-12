@@ -6,11 +6,26 @@
   const MIN = -1000,
         MAX = 1000;
 
-  var nsga = moea.nsga.main.execute;
+  var nsga = moea.nsga.main.execute,
+      spea = moea.spea.main.execute;
 
   function solveWithNsga() {
     var solutions = nsga({
       populationSize: 100,
+      randomize: _.partial(moea.help.real.generateRandom, MIN, MAX),
+      objectives: [f21, f22],
+      numberOfGenerations: 250,
+      crossover: {rate: 0.5, method: moea.help.real.arithmeticCrossover},
+      mutation: {rate: 0}
+    });
+
+    return _.orderBy(_.flatten(solutions));
+  }
+
+  function solveWithSpea() {
+    var solutions = spea({
+      populationSize: 100,
+      archiveSize: 10,
       randomize: _.partial(moea.help.real.generateRandom, MIN, MAX),
       objectives: [f21, f22],
       numberOfGenerations: 250,
@@ -34,8 +49,21 @@
     return Math.pow(x - 5, 2);
   }
 
+  function test(testCase) {
+    var population = _.map(testCase, function (e) {return [e];});
+    var objectives = [f21, f22];
+    var distanceMatrix = moea.spea.distance.calculateDistanceMatrix(population, objectives);
+    moea.spea.fitness.calculate(population, objectives, distanceMatrix);
+    return _.map(population, _.partial(_.get, _, 'fitness.value'));
+  }
+
   window.moea = window.moea || {};
-  _.set(moea, 'problem.f2.solveWithNsga', solveWithNsga);
+  _.set(moea, 'problem.f2', {
+    solveWithNsga: solveWithNsga,
+    solveWithSpea: solveWithSpea,
+    test: test,
+    objs: function (x) {return [f21(x), f22(x)]}
+  });
 
   //moea.debug = {
   //  dominates: function (a, b) {

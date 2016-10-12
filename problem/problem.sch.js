@@ -7,7 +7,8 @@
         MAX = 1000,
         SOLUTION_LENGTH = 11;
 
-  var nsga = moea.nsga.main.execute;
+  var nsga = moea.nsga.main.execute,
+      spea = moea.spea.main.execute;
 
   function solveWithNsga() {
     var solutions = nsga({
@@ -15,6 +16,20 @@
       randomize: _.partial(moea.help.binary.generateRandom, MIN, MAX, SOLUTION_LENGTH),
       objectives: [f1, f2],
       numberOfGenerations: 250,
+      crossover: {rate: 0.5, method: moea.help.binary.singlePointCrossover},
+      mutation: {rate: 1 / SOLUTION_LENGTH, method: moea.help.binary.mutate}
+    });
+
+    return _.uniq(_.map(solutions, moea.help.binary.toInt));
+  }
+
+  function solveWithSpea() {
+    var solutions = spea({
+      populationSize: 100,
+      archiveSize: 100,
+      randomize: _.partial(moea.help.binary.generateRandom, MIN, MAX, SOLUTION_LENGTH),
+      objectives: [f1, f2],
+      numberOfGenerations: 25,
       crossover: {rate: 0.5, method: moea.help.binary.singlePointCrossover},
       mutation: {rate: 1 / SOLUTION_LENGTH, method: moea.help.binary.mutate}
     });
@@ -33,5 +48,8 @@
   }
 
   window.moea = window.moea || {};
-  _.set(moea, 'problem.sch.solveWithNsga', solveWithNsga);
+  _.set(moea, 'problem.sch', {
+    solveWithNsga: solveWithNsga,
+    solveWithSpea: solveWithSpea
+  });
 }());
