@@ -5,7 +5,11 @@
     <title>MOEA test console</title>
 </head>
 <body>
+  <!-- begin: the order matters -->
+  <script src="lib/seedrandom.js"></script>
+  <script src="lib/seedrandom.fix.js"></script>
   <script src="lib/lodash.js"></script>
+  <!-- end -->
   <script src="nsga/nsga.main.js"></script>
   <script src="nsga/nsga.ranking.js"></script>
   <script src="nsga/nsga.crowding.js"></script>
@@ -15,9 +19,12 @@
   <script src="spea/spea.selection.js"></script>
   <script src="help/help.binary.js"></script>
   <script src="help/help.real.js"></script>
+  <script src="help/help.real.sbx.js"></script>
+  <script src="help/help.random.js"></script>
   <script src="problem/problem.sch.js"></script>
   <script src="problem/problem.f2Binary.js"></script>
   <script src="problem/problem.f2.js"></script>
+  <script src="problem/problem.zdt1.js"></script>
   <script src="problem/problem.knapsack.js"></script>
 </body>
 </html>
