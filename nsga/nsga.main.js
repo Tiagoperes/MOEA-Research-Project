@@ -10,6 +10,7 @@
       let children = generateOffspring(parents, settings.crossover.method, settings.mutation);
       population = _.concat(population, children);
       fronts = moea.nsga.ranking.rank(population, settings.objectives);
+      calculateDistances(fronts, settings.objectives);
       population = naturalSelection(fronts, settings.populationSize, settings.objectives);
     }
     return population;
@@ -23,9 +24,14 @@
     return population;
   }
 
+  function calculateDistances(fronts, objectives) {
+    var calculate = moea.nsga.crowding.calculateDistances;
+    _.forEach(fronts, _.partial(calculate, _, objectives));
+  }
+
   function selectParents(population, crossoverRate) {
     var pairs = [],
-      maxPairs = _.floor(crossoverRate * population.length);
+        maxPairs = _.floor(crossoverRate * population.length);
     while (pairs.length < maxPairs) {
       pairs.push([tournament(population), tournament(population)]);
     }
@@ -59,8 +65,8 @@
         population = _.concat(population, front);
         fronts = _.tail(fronts);
       } else {
-        moea.nsga.crowding.orderByCrowdingDistance(front, objectives);
-        population = _.concat(population, _.take(front, maxPopulationSize - population.length));
+        let frontOrderedByDistance = _.orderBy(front, 'fitness.distance', 'desc');
+        population = _.concat(population, _.take(frontOrderedByDistance, maxPopulationSize - population.length));
       }
     }
     return population;

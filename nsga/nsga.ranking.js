@@ -65,6 +65,7 @@
       fronts[i + 1] = calculateNextFront(fronts[i], i + 1);
       i++;
     }
+    fronts.pop();
   }
 
   function rank(population, objectives) {
