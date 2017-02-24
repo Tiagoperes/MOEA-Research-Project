@@ -15,7 +15,7 @@
       populationSize: 100,
       randomize: _.partial(moea.help.binary.generateRandom, MIN, MAX, SOLUTION_LENGTH),
       objectives: [f1, f2],
-      numberOfGenerations: 250,
+      numberOfGenerations: 25,
       crossover: {rate: 0.5, method: moea.help.binary.singlePointCrossover},
       mutation: {rate: 1 / SOLUTION_LENGTH, method: moea.help.binary.mutate}
     });
