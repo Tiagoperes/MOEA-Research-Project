@@ -77,12 +77,27 @@
       populationSize: 100,
       randomize: generateRandom,
       objectives: getObjectiveArray(),
-      numberOfGenerations: 50,
+      numberOfGenerations: 100,
       crossover: {rate: 0.5, method: moea.help.binary.singlePointCrossover},
       mutation: {rate: 1 / instance.objects, method: moea.help.binary.mutate}
     });
 
-    return _.map(_.uniqWith(solutions, _.isEqual), solutionToObject);
+    //return _.map(_.uniqWith(solutions, _.isEqual), solutionToObject);
+    return solutions;
+  }
+
+  function getParetoFront() {
+    var resultNsga = [], resultSpea = [];
+    for (let i = 0; i < 50; i++) {
+      console.log('------ execucao ' + i + ' ------');
+      resultNsga = _.uniqWith(_.concat(resultNsga, solveWithNsga()), _.isEqual);
+      resultSpea = _.uniqWith(_.concat(resultSpea, solveWithSpea()), _.isEqual);
+    }
+    return {
+      nsga: _.map(resultNsga, solutionToObject),
+      spea: _.map(resultSpea, solutionToObject),
+      all: _.map( _.uniqWith(_.concat(resultNsga, resultSpea), _.isEqual), solutionToObject)
+    };
   }
 
   function solveWithSpea() {
@@ -96,12 +111,14 @@
       mutation: {rate: 1 / instance.objects, method: moea.help.binary.mutate}
     });
 
-    return _.map(_.uniqWith(solutions, _.isEqual), solutionToObject);
+    //return _.map(_.uniqWith(solutions, _.isEqual), solutionToObject);
+    return solutions;
   }
 
   window.moea = window.moea || {};
   _.set(moea, 'problem.knapsack', {
     solveWithNsga: solveWithNsga,
-    solveWithSpea: solveWithSpea
+    solveWithSpea: solveWithSpea,
+    getParetoFront: getParetoFront
   });
 }());

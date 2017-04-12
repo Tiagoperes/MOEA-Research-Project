@@ -24,7 +24,7 @@
   }
 
   function getComponent(graph, vertex, analyzed, component) {
-    component = component || _.fill(new Array(graph.length), []);
+    component = component || createEmptyGraph(graph.length);
     analyzed[vertex] = true;
     component[vertex] = graph[vertex];
 
@@ -110,8 +110,7 @@
   function merge(t1, t2) {
     var result = [];
     for (let i = 0; i < t1.length; i++) {
-      let inheritance = _.isEmpty(t1[i]) ? t2[i] : t1[i];
-      result[i] = _.clone(inheritance);
+      result[i] = _.union(t1[i], t2[i]);
     }
     return result;
   }
@@ -126,17 +125,17 @@
     if (t2 instanceof Array) {
       return t2;
     }
-    return _.fill(new Array(graph.length), []);
+    return createEmptyGraph(graph.length);
   }
 
-  function reconnect(t1, t2, graph, weights) {
+  function reconnectDijkstra(t1, t2, graph, weights) {
     var v1 = getVerticesList(t1),
         v2 = getVerticesList(t2),
         reconnected = createReconnectedTreeStructure(t1, t2, graph),
         vnodes, path, node;
 
     vnodes = createVirtualNodes(graph, weights, v1, v2);
-    path = dijkstra(graph, weights, vnodes[0]);
+    path = moea.help.dijkstra(graph, weights, vnodes[0]);
 
     node = path[_.last(vnodes)].parent;
     while (path[node].parent !== _.head(vnodes)) {
@@ -148,9 +147,28 @@
     return reconnected;
   }
 
+  function reconnectRandom(t1, t2, graph) {
+    var v1 = getVerticesList(t1),
+        v2 = getVerticesList(t2),
+        reconnected = createReconnectedTreeStructure(t1, t2, graph),
+        node;
+
+    node = moea.help.findRandomPath(v1, v2, graph);
+
+    while (node.parent) {
+      reconnected[node.parent.label].push(node.label);
+      reconnected[node.label].push(node.parent.label);
+      node = node.parent;
+    }
+
+    return reconnected;
+  }
+
   function extractTreeWithRootNode(forest, root) {
     for (let i = 0; i < forest.length; i++) {
-      if (forest[i] === root || forest[i][root].length > 0) {
+      let isRoot = forest[i] === root;
+      let hasRoot = forest[i] instanceof Array && !_.isEmpty(forest[i][root]);
+      if (isRoot || hasRoot) {
         return forest.splice(i, 1)[0];
       }
     }
@@ -159,9 +177,9 @@
   function reconnectForest(forest, root, graph, weights) {
     var s1 = extractTreeWithRootNode(forest, root);
     while (forest.length > 0) {
-      //let r2 = _.random(forest.length - 1);
-      let r2 = 0; // fixme
+      let r2 = _.random(forest.length - 1);
       let s2 = forest.splice(r2, 1)[0];
+      let reconnect = weights ? reconnectDijkstra : reconnectRandom;
       s1 = reconnect(s1, s2, graph, weights);
     }
     return s1;
@@ -205,9 +223,62 @@
     forest = _.filter(forest, _.partial(isUsefulSubTree, _, source, destinations));
     child = reconnectForest(forest, source, graph, weights);
     child = getTreeFromGraph(child, source);
-    moea.help.tree.prune(child, destinations);
-    return child;
+    moea.help.tree.randomize.prune(child, destinations);
+    return [child];
   }
 
-  window.crossover = crossover;
+  function getVerticesWithEdges(tree) {
+    var result = [];
+    for (let i = 0; i < tree.length; i++) {
+      if (tree[i].length) {
+        result.push(i);
+      }
+    }
+    return result;
+  }
+
+  function removeRandomEdges(tree, disconnectionRate) {
+    var verticesWithEdges = getVerticesWithEdges(tree),
+        numberOfDisconnections = Math.round(tree.length * disconnectionRate);
+
+    while (numberOfDisconnections && verticesWithEdges.length) {
+      let toDisconnect = _.removeRandom(verticesWithEdges);
+      tree[toDisconnect] = [];
+      numberOfDisconnections--;
+    }
+  }
+
+  function mutate(tree, graph, source, destinations, disconnectionRate) {
+    var forest, mutated;
+    removeRandomEdges(tree, disconnectionRate);
+    tree = getDirectionlessGraph(tree);
+    forest = splitByComponent(tree);
+    forest = _.filter(forest, _.partial(isUsefulSubTree, _, source, destinations));
+    mutated = reconnectForest(forest, source, graph);
+    mutated = getTreeFromGraph(mutated, source);
+    moea.help.tree.randomize.prune(mutated, destinations);
+    if (!verifyValidity(mutated)) {
+      minvalid++;
+    }
+    mtotal++;
+    return mutated;
+  }
+
+  function verifyValidity(tree) {
+    for (let i = 0; i < tree.length; i++) {
+      if (_.uniq(tree[i]).length !== tree[i].length) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  window.minvalid = 0;
+  window.mtotal = 0;
+
+  window.moea = window.moea || {};
+  _.set(moea, 'help.tree.dijkstraGa', {
+    crossover: crossover,
+    mutate: mutate
+  });
 }());

@@ -13,7 +13,7 @@
       calculateDistances(fronts, settings.objectives);
       population = naturalSelection(fronts, settings.populationSize, settings.objectives);
     }
-    return population;
+    return fronts[0];
   }
 
   function generateRandomPopulation(populationSize, randomizationFunction) {

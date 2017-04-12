@@ -18,7 +18,7 @@
       archive = moea.spea.selection.selectArchive(everybody, settings.archiveSize, distanceMatrix);
     }
 
-    return _.filter(archive, moea.spea.selection.isNonDominated);
+    return archive;
   }
 
   function generateRandomPopulation(populationSize, randomizationFunction) {

@@ -86,7 +86,7 @@
   }
 
   window.moea = window.moea || {};
-  _.set(moea, 'help.tree', {
+  _.set(moea, 'help.tree.randomize', {
     generateRandom: randomize,
     prune: function (tree, destinations) {
       var properties = createProperties(tree.length, destinations);

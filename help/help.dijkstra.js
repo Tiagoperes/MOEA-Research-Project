@@ -97,16 +97,6 @@
     return vertices;
   }
 
-  function getMinimumCostPath(graph, weights, source, destination) {
-    var result = dijkstra(graph, weights, source);
-    var tree = _.fill(new Array(graph.length), []);
-    var node = destination;
-    while(node !== null) {
-      graph[result[node].parent].push(node);
-      node = result[node].parent;
-    }
-    return tree;
-  }
-
-  window.dijkstra = dijkstra;
+  window.moea = window.moea || {};
+  _.set(moea, 'help.dijkstra', dijkstra);
 }());
