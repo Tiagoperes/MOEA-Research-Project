@@ -6,6 +6,10 @@
     var fronts = moea.nsga.ranking.rank(population, settings.objectives);
     for (let i = 0; i < settings.numberOfGenerations; i++) {
       console.log(i);
+      if (settings.filter) {
+        population = settings.filter(population);
+        fronts = moea.nsga.ranking.rank(population, settings.objectives);
+      }
       let parents = selectParents(population, settings.crossover.rate);
       let children = generateOffspring(parents, settings.crossover.method, settings.mutation);
       population = _.concat(population, children);

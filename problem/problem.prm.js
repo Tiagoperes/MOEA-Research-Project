@@ -2,12 +2,13 @@
   'use strict';
 
   const DISCONNECTION_RATE = 0.1,
-        DATA_FLOW = 1;
+        DATA_FLOW = 1,
+        NUMBER_OF_OBJECTIVES = 8;
 
   var nsga = moea.nsga.main.execute,
       spea = moea.spea.main.execute;
 
-  var graph, weights, costs, root, destinations, dmax, problems;
+  var graph, weights, costs, root, destinations, dmax, problems, worst;
 
   function setPrmInstance(instance) {
     graph = instance.graph;
@@ -15,46 +16,53 @@
     root = instance.root;
     destinations = instance.destinations;
     dmax = instance.dmax;
+    worst = _.fill(new Array(NUMBER_OF_OBJECTIVES), -Infinity);
 
     costs = _.map(weights, function (weightList) {
       return _.map(weightList, 'cost');
     });
   }
 
-  function solveWithNsga(problem) {
-    if (!graph) {
-      setPrmInstance(moea.problem.prm.instances.mista);
+
+  function getTreesInObjectiveSpace(trees, objectives) {
+    return _.map(trees, function (tree) {
+      return _.map(objectives, function(objective) {
+        return objective(tree);
+      });
+    })
+  }
+
+  function filter(population, objectives) {
+    var size = population.length;
+    var filtered = _.uniqWith(population, function (a, b) {
+      var values = getTreesInObjectiveSpace([a, b], objectives);
+      return _.isEqual(values[0], values[1]);
+    });
+    while (filtered.length < size) {
+      filtered.push(moea.help.tree.randomize.generateRandom(graph, root, destinations));
     }
+    return filtered;
+  }
 
-    problem = problem || 1;
+  function solveWithNsga(network, problem) {
+    var objectives = problems[problem - 1];
+    setPrmInstance(moea.problem.prm.instances['rede' + network]);
 
-    var solutions = nsga({
+    return nsga({
       populationSize: 60,
       randomize: _.partial(moea.help.tree.randomize.generateRandom, graph, root, destinations),
-      objectives: problems[problem - 1],
+      objectives: objectives,
+      //filter: _.partial(filter, _, objectives),
       numberOfGenerations: 100,
       crossover: {rate: 1, method: _.partial(moea.help.tree.dijkstraGa.crossover, _, _, graph, costs, root, destinations)},
       mutation: {rate: 0.2, method: _.partial(moea.help.tree.dijkstraGa.mutate, _, graph, root, destinations, DISCONNECTION_RATE)}
     });
-
-    var ans = _.uniqWith(solutions, isGraphEqual);
-    _.forEach(ans, function(a) {
-      console.log(_.reduce(problems[problem - 1], function (fres, p) {
-        fres.push(p(a));
-        return fres;
-      }, []));
-    });
-    return ans;
   }
 
-  function solveWithSpea(problem) {
-    if (!graph) {
-      setPrmInstance(moea.problem.prm.instances.mista);
-    }
+  function solveWithSpea(network, problem) {
+    setPrmInstance(moea.problem.prm.instances['rede' + network]);
 
-    problem = problem || 1;
-
-    var solutions = spea({
+    return spea({
       populationSize: 60,
       archiveSize: 60,
       randomize: _.partial(moea.help.tree.randomize.generateRandom, graph, root, destinations),
@@ -63,24 +71,27 @@
       crossover: {rate: 1, method: _.partial(moea.help.tree.dijkstraGa.crossover, _, _, graph, costs, root, destinations)},
       mutation: {rate: 0.2, method: _.partial(moea.help.tree.dijkstraGa.mutate, _, graph, root, destinations, DISCONNECTION_RATE)}
     });
-
-    var ans = _.uniqWith(solutions, isGraphEqual);
-    _.forEach(ans, function(a) {
-      console.log(_.reduce(problems[problem - 1], function (fres, p) {
-        fres.push(p(a));
-        return fres;
-      }, []));
-    });
-    return ans;
   }
 
-  function isGraphEqual(a, b) {
-    var i = 0, different = false;
-    while (i < a.length && !different) {
-      different = a[i].length !== b[i].length || _.difference(a[i], b[i]).length > 0;
-      i++;
+  function test(algorithm, network, problem, numberOfExecutions) {
+    var executions = [];
+
+    network = network || 0;
+    problem = problem || 1;
+    numberOfExecutions = numberOfExecutions || 1;
+
+    for (let i = 0; i < numberOfExecutions; i++) {
+      console.log('\nEXECUTION ' + (i + 1));
+      console.log('---------------------');
+      var solutions = algorithm(network, problem);
+      var solutionsValues = getTreesInObjectiveSpace(solutions, problems[problem - 1]);
+      var uniqS = _.uniqWith(solutionsValues, _.isEqual);
+      var worstOnObjectives = _.filter(worst, _.partial(_.gt, _, -Infinity));
+      var metrics = moea.problem.prm.report.getMetrics(network, problem - 1, uniqS, worstOnObjectives);
+      executions.push(metrics);
     }
-    return !different;
+
+    return moea.problem.prm.report.createReport(executions);
   }
 
   function isValidTree(tree) {
@@ -116,6 +127,7 @@
         sum += weights[node][child][property];
       });
     }
+
     return sum;
   }
 
@@ -135,27 +147,36 @@
     return result;
   }
 
+  function getTreeCost(tree) {
+    var cost = getWeightSum(tree, 'cost');
+    if (cost !== Infinity && cost > worst[0]) worst[0] = cost;
+    return cost;
+  }
+
   function getTreeE2EDelay(tree) {
+    var delay;
+
     if (!isValidTree(tree)) {
       return Infinity;
     }
 
-    return - _.reduce(destinations, function (sum, node) {
+    delay = - _.reduce(destinations, function (sum, node) {
       var e2e = getEndToEndDelay(tree, root, node, 0);
       return sum + (e2e <= dmax ? 1 : 0);
     }, 0);
-  }
 
-  function getTreeCost(tree) {
-    return getWeightSum(tree, 'cost');
+    if (delay > worst[1]) worst[1] = delay;
+    return delay;
   }
 
   function getTotalDelay(tree) {
-    return getWeightSum(tree, 'delay');
+    var delay = getWeightSum(tree, 'delay');
+    if (delay > worst[2]) worst[2] = delay;
+    return delay;
   }
 
   function getMedianDelay(tree) {
-    var total;
+    var total, delay;
 
     if (!isValidTree(tree)) {
       return Infinity;
@@ -165,22 +186,31 @@
       return getEndToEndDelay(tree, root, node, 0);
     });
 
-    return total / destinations.length;
+    delay = total / destinations.length;
+    if (delay > worst[3]) worst[3] = delay;
+    return delay;
   }
 
   function getMaxDelay(tree) {
+    var delay;
+
     if (!isValidTree(tree)) {
       return Infinity;
     }
 
-    return _.reduce(destinations, function (max, node) {
+    delay = _.reduce(destinations, function (max, node) {
       var d = getEndToEndDelay(tree, root, node, 0);
       return d > max ? d : max;
     }, 0);
+
+    if (delay > worst[4]) worst[4] = delay;
+    return delay;
   }
 
   function getHopsCount(tree) {
-    return _.sumBy(tree, 'length');
+    var hops = _.sumBy(tree, 'length');
+    if (hops > worst[5]) worst[5] = hops;
+    return hops;
   }
 
   function getLinkUsage(v1, v2) {
@@ -200,12 +230,14 @@
       });
     }
 
+    if (max > worst[6]) worst[6] = max;
     return max;
   }
 
   function getMedianLinkUsage(tree) {
     var sum = 0,
-        numberOfEdges = 0;
+        numberOfEdges = 0,
+        median;
 
     for (let i = 0; i < tree.length; i++) {
       _.forEach(tree[i], function (edge) {
@@ -214,7 +246,9 @@
       });
     }
 
-    return sum / numberOfEdges;
+    median = sum / numberOfEdges;
+    if (median > worst[7]) worst[7] = median;
+    return median;
   }
 
   problems = [
@@ -235,7 +269,8 @@
   _.set(moea, 'problem.prm', {
     solveWithNsga: solveWithNsga,
     solveWithSpea: solveWithSpea,
-    setPrmInstance: setPrmInstance,
+    testWithNsga: _.partial(test, solveWithNsga),
+    testWithSpea: _.partial(test, solveWithSpea),
     instances: []
   });
 }());
