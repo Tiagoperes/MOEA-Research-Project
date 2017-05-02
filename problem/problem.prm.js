@@ -53,7 +53,7 @@
       randomize: _.partial(moea.help.tree.randomize.generateRandom, graph, root, destinations),
       objectives: objectives,
       //filter: _.partial(filter, _, objectives),
-      numberOfGenerations: 100,
+      numberOfGenerations: 10,
       crossover: {rate: 1, method: _.partial(moea.help.tree.dijkstraGa.crossover, _, _, graph, costs, root, destinations)},
       mutation: {rate: 0.2, method: _.partial(moea.help.tree.dijkstraGa.mutate, _, graph, root, destinations, DISCONNECTION_RATE)}
     });
@@ -208,18 +208,30 @@
   }
 
   function getHopsCount(tree) {
-    var hops = _.sumBy(tree, 'length');
+    var hops;
+
+    if (!isValidTree(tree)) {
+      return Infinity;
+    }
+
+    hops = _.sumBy(tree, 'length');
     if (hops > worst[5]) worst[5] = hops;
     return hops;
   }
 
   function getLinkUsage(v1, v2) {
-    var w = weights[v1][v2];
+    var w;
+
+    w = weights[v1][v2];
     return (w.traffic + DATA_FLOW) / w.capacity;
   }
 
   function getMaxLinkUsage(tree) {
     var max = 0;
+
+    if (!isValidTree(tree)) {
+      return Infinity;
+    }
 
     for (let i = 0; i < tree.length; i++) {
       _.forEach(tree[i], function (edge) {
@@ -238,6 +250,10 @@
     var sum = 0,
         numberOfEdges = 0,
         median;
+
+    if (!isValidTree(tree)) {
+      return Infinity;
+    }
 
     for (let i = 0; i < tree.length; i++) {
       _.forEach(tree[i], function (edge) {
