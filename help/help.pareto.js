@@ -23,9 +23,21 @@
     }, false);
   }
 
+  function getNonDominatedSet(solutions, objectives) {
+    return _.filter(solutions, function (s) {
+      for (let i = 0; i < solutions.length; i++) {
+        if (dominates(solutions[i], s, objectives)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }
+
   window.moea = window.moea || {};
   _.set(moea, 'help.pareto', {
     dominates: dominates,
-    isDominatedBySet: isDominatedBySet
+    isDominatedBySet: isDominatedBySet,
+    getNonDominatedSet: getNonDominatedSet
   });
 }());

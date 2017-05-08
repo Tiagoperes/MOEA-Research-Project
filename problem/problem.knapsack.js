@@ -2,23 +2,19 @@
   'use strict';
 
   var nsga = moea.nsga.main.execute,
-      spea = moea.spea.main.execute;
+      spea = moea.spea.main.execute,
+      moead = moea.moead.main.execute;
 
-  var instance = {
-    objectives: 3,
-    objects: 10,
-    capacity: 2137,
-    profitMatrix: [
-      [566, 611, 506, 180, 817, 184, 585, 423, 26, 317],
-      [62, 84, 977, 979, 874, 54, 269, 93, 881, 563],
-      [664, 982, 962, 140, 224, 215, 12, 869, 332, 537]
-    ],
-    weights: [557, 898, 148, 63, 78, 964, 246, 662, 386, 272]
-  };
+  var instance;
+
+  function setInstance(numberOfObjectives, numberOfItems) {
+    var name = 'obj' + numberOfObjectives + 'Itm' + numberOfItems;
+    instance = moea.problem.knapsack.instances[name];
+  }
 
   function generateRandom() {
     var individual = [];
-    for (let i = 0; i < instance.objects; i++) {
+    for (let i = 0; i < instance.items; i++) {
       individual[i] = !!_.random(0, 1);
     }
     return individual;
@@ -64,61 +60,97 @@
     return objectives;
   }
 
-  function solutionToObject(solution) {
-    return {
-      numberOfObjects: _.filter(solution).length,
-      weight: getWeight(solution),
-      profits: getTotalProfit(solution)
-    }
+  function getSolutionsInObjectiveSpace(solutions, objectives) {
+    return _.map(solutions, function (s) {
+      return _.map(objectives, function(objective) {
+        return objective(s);
+      });
+    })
   }
 
-  function solveWithNsga() {
-    var solutions = nsga({
+  function solveWithNsga(numberOfObjectives, numberOfItems) {
+    setInstance(numberOfObjectives, numberOfItems);
+
+    return nsga({
       populationSize: 100,
       randomize: generateRandom,
       objectives: getObjectiveArray(),
       numberOfGenerations: 100,
       crossover: {rate: 0.5, method: moea.help.binary.singlePointCrossover},
-      mutation: {rate: 1 / instance.objects, method: moea.help.binary.mutate}
+      mutation: {rate: 1 / instance.items, method: moea.help.binary.mutate}
     });
-
-    //return _.map(_.uniqWith(solutions, _.isEqual), solutionToObject);
-    return solutions;
   }
 
-  function getParetoFront() {
-    var resultNsga = [], resultSpea = [];
-    for (let i = 0; i < 50; i++) {
-      console.log('------ execucao ' + i + ' ------');
-      resultNsga = _.uniqWith(_.concat(resultNsga, solveWithNsga()), _.isEqual);
-      resultSpea = _.uniqWith(_.concat(resultSpea, solveWithSpea()), _.isEqual);
-    }
-    return {
-      nsga: _.map(resultNsga, solutionToObject),
-      spea: _.map(resultSpea, solutionToObject),
-      all: _.map( _.uniqWith(_.concat(resultNsga, resultSpea), _.isEqual), solutionToObject)
-    };
-  }
+  function solveWithSpea(numberOfObjectives, numberOfItems) {
+    setInstance(numberOfObjectives, numberOfItems);
 
-  function solveWithSpea() {
-    var solutions = spea({
+    return spea({
       populationSize: 100,
       archiveSize: 100,
       randomize: generateRandom,
       objectives: getObjectiveArray(),
-      numberOfGenerations: 50,
+      numberOfGenerations: 100,
       crossover: {rate: 0.5, method: moea.help.binary.singlePointCrossover},
-      mutation: {rate: 1 / instance.objects, method: moea.help.binary.mutate}
+      mutation: {rate: 1 / instance.items, method: moea.help.binary.mutate}
     });
+  }
 
-    //return _.map(_.uniqWith(solutions, _.isEqual), solutionToObject);
-    return solutions;
+  function solveWithMoead(numberOfObjectives, numberOfItems) {
+    setInstance(numberOfObjectives, numberOfItems);
+
+    return moead({
+      populationSize: 100,
+      neighborhoodSize: 8,
+      randomize: generateRandom,
+      objectives: getObjectiveArray(),
+      numberOfGenerations: 100,
+      crossover: {method: moea.help.binary.singlePointCrossover},
+      mutation: {rate: 1 / instance.items, method: moea.help.binary.mutate}
+    });
+  }
+
+  function test(algorithm, numberOfObjectives, numberOfItems, numberOfExecutions) {
+    var executions = [];
+
+    numberOfObjectives = numberOfObjectives || 3;
+    numberOfItems = numberOfItems || 10;
+    numberOfExecutions = numberOfExecutions || 1;
+
+    for (let i = 0; i < numberOfExecutions; i++) {
+      console.log('\nEXECUTION ' + (i + 1));
+      console.log('---------------------');
+      var solutions = algorithm(numberOfObjectives, numberOfItems);
+      var uniqS = getSolutionsInObjectiveSpace(_.uniqWith(solutions, _.isEqual), getObjectiveArray());
+      var worst = _.fill(new Array(numberOfObjectives), 1);
+      var metrics = moea.help.report.getMetrics(uniqS, instance.pareto, worst);
+      executions.push(metrics);
+    }
+
+    return moea.help.report.createReport(executions);
+  }
+
+  function getParetoFront(numberOfObjectives, numberOfItems, numberOfExecutions) {
+    var result = [];
+
+    for (let i = 0; i < numberOfExecutions; i++) {
+      console.log('------ execucao ' + i + ' ------');
+      result = _.uniqWith(_.concat(result, solveWithNsga(numberOfObjectives, numberOfItems)), _.isEqual);
+      result = _.uniqWith(_.concat(result, solveWithSpea(numberOfObjectives, numberOfItems)), _.isEqual);
+    }
+
+    var solValues = getSolutionsInObjectiveSpace(result, getObjectiveArray());
+    return JSON.stringify(moea.help.pareto.getNonDominatedSet(solValues, getObjectiveArray(solValues[0])));
   }
 
   window.moea = window.moea || {};
   _.set(moea, 'problem.knapsack', {
     solveWithNsga: solveWithNsga,
     solveWithSpea: solveWithSpea,
-    getParetoFront: getParetoFront
+    solveWithMoead: solveWithMoead,
+    testWithNsga: _.partial(test, solveWithNsga),
+    testWithSpea: _.partial(test, solveWithSpea),
+    testWithMoead: _.partial(test, solveWithMoead),
+    getParetoFront: getParetoFront,
+    instances: []
   });
 }());
