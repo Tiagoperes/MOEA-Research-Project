@@ -3,7 +3,8 @@
 
   var nsga = moea.nsga.main.execute,
       spea = moea.spea.main.execute,
-      moead = moea.moead.main.execute;
+      moead = moea.moead.main.execute,
+      ammd = moea.ammd.main.execute;
 
   var instance;
 
@@ -27,14 +28,6 @@
     }, 0);
   }
 
-  function getTotalProfit(individual) {
-    var profits = [];
-    for (let i = 0; i < instance.objectives; i++) {
-      profits[i] = getProfit(i, individual);
-    }
-    return profits;
-  }
-
   function getWeight(individual) {
     return _.reduce(individual, function (sum, isObjectPresent, index) {
       var objectWeight = isObjectPresent ? instance.weights[index] : 0;
@@ -43,12 +36,18 @@
   }
 
   function getFitness(objective, individual) {
+    //fixme: arrume um jeito menos feio de fazer isso
+    if (_.get(individual.knapsackFitness, objective)) return _.get(individual.knapsackFitness, objective);
+    individual.knapsackFitness = individual.knapsackFitness || [];
+
     var profit = getProfit(objective, individual),
         weight = getWeight(individual);
 
     if (profit === 0 || weight > instance.capacity) {
+      individual.knapsackFitness[objective] = 2;
       return 2;
     }
+    individual.knapsackFitness[objective] = 1 / profit;
     return 1 / profit;
   }
 
@@ -109,6 +108,19 @@
     });
   }
 
+  function solveWithAmmd(numberOfObjectives, numberOfItems) {
+    setInstance(numberOfObjectives, numberOfItems);
+
+    return ammd({
+      populationSize: 100,
+      randomize: generateRandom,
+      objectives: getObjectiveArray(),
+      numberOfGenerations: 1000,
+      crossover: {method: moea.help.binary.singlePointCrossover},
+      mutation: {rate: 1 / instance.items, method: moea.help.binary.mutate}
+    });
+  }
+
   function test(algorithm, numberOfObjectives, numberOfItems, numberOfExecutions) {
     var executions = [];
 
@@ -136,6 +148,8 @@
       console.log('------ execucao ' + i + ' ------');
       result = _.uniqWith(_.concat(result, solveWithNsga(numberOfObjectives, numberOfItems)), _.isEqual);
       result = _.uniqWith(_.concat(result, solveWithSpea(numberOfObjectives, numberOfItems)), _.isEqual);
+      result = _.uniqWith(_.concat(result, solveWithMoead(numberOfObjectives, numberOfItems)), _.isEqual);
+      result = _.uniqWith(_.concat(result, solveWithAmmd(numberOfObjectives, numberOfItems)), _.isEqual);
     }
 
     var solValues = getSolutionsInObjectiveSpace(result, getObjectiveArray());
@@ -147,9 +161,11 @@
     solveWithNsga: solveWithNsga,
     solveWithSpea: solveWithSpea,
     solveWithMoead: solveWithMoead,
+    solveWithAmmd: solveWithAmmd,
     testWithNsga: _.partial(test, solveWithNsga),
     testWithSpea: _.partial(test, solveWithSpea),
     testWithMoead: _.partial(test, solveWithMoead),
+    testWithAmmd: _.partial(test, solveWithAmmd),
     getParetoFront: getParetoFront,
     instances: []
   });

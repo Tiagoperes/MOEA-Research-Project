@@ -58,7 +58,9 @@
   function getErrorRate(solutions, pareto) {
     var objectives = getObjectiveArray(solutions[0]);
     var sum =  _.sumBy(solutions, function (s) {
-      return moea.help.pareto.isDominatedBySet(s, pareto, objectives) ? 1 : 0;
+      var r = moea.help.pareto.isDominatedBySet(s, pareto, objectives) ? 1 : 0;
+      if (r) console.log(s);
+      return r;
     });
     return sum / solutions.length;
   }

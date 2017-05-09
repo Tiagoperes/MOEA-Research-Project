@@ -9,8 +9,9 @@
     while (!worse && i < objectives.length) {
       let pValue = objectives[i](p);
       let qValue = objectives[i](q);
-      if (pValue < qValue) better = true;
-      if (pValue > qValue) worse = true;
+      let dif = Math.abs(pValue - qValue);
+      if (dif > 0.000000001 && pValue < qValue) better = true;
+      if (dif > 0.000000001 && pValue > qValue) worse = true;
       i++;
     }
 

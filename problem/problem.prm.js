@@ -6,7 +6,8 @@
 
   var nsga = moea.nsga.main.execute,
       spea = moea.spea.main.execute,
-      moead = moea.moead.main.execute;
+      moead = moea.moead.main.execute,
+      ammd = moea.ammd.main.execute;
 
   var graph, weights, costs, root, destinations, dmax, problems, worst, objectives;
 
@@ -82,6 +83,19 @@
       randomize: _.partial(moea.help.tree.randomize.generateRandom, graph, root, destinations),
       objectives: objectives,
       numberOfGenerations: 100,
+      crossover: {method: _.partial(moea.help.tree.dijkstraGa.crossover, _, _, graph, costs, root, destinations)},
+      mutation: {rate: 0.2, method: _.partial(moea.help.tree.dijkstraGa.mutate, _, graph, root, destinations, DISCONNECTION_RATE)}
+    });
+  }
+
+  function solveWithAmmd(network, problem) {
+    setPrmInstance(moea.problem.prm.instances['rede' + network], problem);
+
+    return ammd({
+      populationSize: 20,
+      randomize: _.partial(moea.help.tree.randomize.generateRandom, graph, root, destinations),
+      objectives: objectives,
+      numberOfGenerations: 10000,
       crossover: {method: _.partial(moea.help.tree.dijkstraGa.crossover, _, _, graph, costs, root, destinations)},
       mutation: {rate: 0.2, method: _.partial(moea.help.tree.dijkstraGa.mutate, _, graph, root, destinations, DISCONNECTION_RATE)}
     });
@@ -358,10 +372,12 @@
   _.set(moea, 'problem.prm', {
     solveWithNsga: solveWithNsga,
     solveWithSpea: solveWithSpea,
-    solveWithMoead:solveWithMoead,
+    solveWithMoead: solveWithMoead,
+    solveWithAmmd: solveWithAmmd,
     testWithNsga: _.partial(test, solveWithNsga),
     testWithSpea: _.partial(test, solveWithSpea),
     testWithMoead: _.partial(test, solveWithMoead),
+    testWithAmmd: _.partial(test, solveWithAmmd),
     testObjectives: testObjectives,
     instances: []
   });
