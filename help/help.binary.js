@@ -50,6 +50,21 @@
     ];
   }
 
+  function uniformCrossover(p1, p2) {
+    var child1 = [], child2 = [];
+    for (let i = 0; i < p1.length; i++) {
+      let rand = _.random(1);
+      if (rand) {
+        child1.push(p1[i]);
+        child2.push(p2[i]);
+      } else {
+        child1.push(p2[i]);
+        child2.push(p1[i]);
+      }
+    }
+    return [child1, child2];
+  }
+
   function mutate(binArray) {
     var rand = _.random(binArray.length - 1);
     binArray[rand] = !binArray[rand];
@@ -72,6 +87,7 @@
   _.set(moea, 'help.binary', {
     generateRandom: generateRandom,
     singlePointCrossover: singlePointCrossover,
+    uniformCrossover: uniformCrossover,
     mutate: mutate,
     toSignedBinaryArray: toSignedBinaryArray,
     toInt: toInt

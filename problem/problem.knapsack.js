@@ -44,11 +44,11 @@
         weight = getWeight(individual);
 
     if (profit === 0 || weight > instance.capacity) {
-      individual.knapsackFitness[objective] = 2;
-      return 2;
+      individual.knapsackFitness[objective] = 0;
+      return 0;
     }
-    individual.knapsackFitness[objective] = 1 / profit;
-    return 1 / profit;
+    individual.knapsackFitness[objective] = -profit;
+    return -profit;
   }
 
   function getObjectiveArray() {
@@ -74,9 +74,9 @@
       populationSize: 100,
       randomize: generateRandom,
       objectives: getObjectiveArray(),
-      numberOfGenerations: 100,
-      crossover: {rate: 0.5, method: moea.help.binary.singlePointCrossover},
-      mutation: {rate: 1 / instance.items, method: moea.help.binary.mutate}
+      numberOfGenerations: numberOfItems,
+      crossover: {rate: 0.5, method: moea.help.binary.uniformCrossover},
+      mutation: {rate: 2 / instance.items, method: moea.help.binary.mutate}
     });
   }
 
@@ -88,9 +88,9 @@
       archiveSize: 100,
       randomize: generateRandom,
       objectives: getObjectiveArray(),
-      numberOfGenerations: 100,
-      crossover: {rate: 0.5, method: moea.help.binary.singlePointCrossover},
-      mutation: {rate: 1 / instance.items, method: moea.help.binary.mutate}
+      numberOfGenerations: numberOfItems,
+      crossover: {rate: 0.5, method: moea.help.binary.uniformCrossover},
+      mutation: {rate: 2 / instance.items, method: moea.help.binary.mutate}
     });
   }
 
@@ -102,9 +102,9 @@
       neighborhoodSize: 8,
       randomize: generateRandom,
       objectives: getObjectiveArray(),
-      numberOfGenerations: 100,
-      crossover: {method: moea.help.binary.singlePointCrossover},
-      mutation: {rate: 1 / instance.items, method: moea.help.binary.mutate}
+      numberOfGenerations: numberOfItems,
+      crossover: {method: moea.help.binary.uniformCrossover},
+      mutation: {rate: 2 / instance.items, method: moea.help.binary.mutate}
     });
   }
 
@@ -115,9 +115,9 @@
       populationSize: 100,
       randomize: generateRandom,
       objectives: getObjectiveArray(),
-      numberOfGenerations: 1000,
-      crossover: {method: moea.help.binary.singlePointCrossover},
-      mutation: {rate: 1 / instance.items, method: moea.help.binary.mutate}
+      numberOfGenerations: numberOfItems * 10,
+      crossover: {method: moea.help.binary.uniformCrossover},
+      mutation: {rate: 2 / instance.items, method: moea.help.binary.mutate}
     });
   }
 
@@ -148,8 +148,8 @@
       console.log('------ execucao ' + i + ' ------');
       result = _.uniqWith(_.concat(result, solveWithNsga(numberOfObjectives, numberOfItems)), _.isEqual);
       result = _.uniqWith(_.concat(result, solveWithSpea(numberOfObjectives, numberOfItems)), _.isEqual);
-      result = _.uniqWith(_.concat(result, solveWithMoead(numberOfObjectives, numberOfItems)), _.isEqual);
-      result = _.uniqWith(_.concat(result, solveWithAmmd(numberOfObjectives, numberOfItems)), _.isEqual);
+      //result = _.uniqWith(_.concat(result, solveWithMoead(numberOfObjectives, numberOfItems)), _.isEqual);
+      //result = _.uniqWith(_.concat(result, solveWithAmmd(numberOfObjectives, numberOfItems)), _.isEqual);
     }
 
     var solValues = getSolutionsInObjectiveSpace(result, getObjectiveArray());
@@ -167,6 +167,6 @@
     testWithMoead: _.partial(test, solveWithMoead),
     testWithAmmd: _.partial(test, solveWithAmmd),
     getParetoFront: getParetoFront,
-    instances: []
+    instances: {}
   });
 }());
