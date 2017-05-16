@@ -115,7 +115,7 @@
     });
   }
 
-  function ammd(settings) {
+  function aemmd(settings) {
     var tables = createDominationTables(settings.objectives),
         population = generateRandomPopulation(settings.populationSize, settings.randomize),
         tableInvolvingAllObjectives = _.last(tables);
@@ -133,5 +133,5 @@
   }
 
   window.moea = window.moea || {};
-  _.set(moea, 'ammd.main.execute', ammd);
+  _.set(moea, 'aemmd.main.execute', aemmd);
 }());

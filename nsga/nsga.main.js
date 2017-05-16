@@ -17,10 +17,6 @@
       fronts = moea.nsga.ranking.rank(population, settings.objectives);
       calculateDistances(fronts, settings.objectives);
 
-      console.log('número de individuos inválidos: ' + _.filter(population, function (p) {
-          return _.indexOf(p.knapsackFitness, 0) !== -1;
-        }).length + ' de ' + population.length);
-
       population = naturalSelection(fronts, settings.populationSize, settings.objectives);
     }
     return fronts[0];

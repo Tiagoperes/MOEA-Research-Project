@@ -20,7 +20,9 @@
 
   function isDominatedBySet(solution, set, objectives) {
     return _.reduce(set, function (result, s) {
-      return result || dominates(s, solution, objectives);
+		var d =  dominates(s, solution, objectives);
+		//if (!result && d) console.log(solution + ' dominated by ' + s);
+		return result || d;
     }, false);
   }
 

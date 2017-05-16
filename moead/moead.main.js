@@ -1,7 +1,8 @@
 (function () {
   'use strict';
 
-  var dominates = moea.help.pareto.dominates;
+  var dominates = moea.help.pareto.dominates,
+      scalarize, best;
 
   function getRandomWeightVector(numberOfObjectives) {
     var rand = _.map(new Array(numberOfObjectives - 1), Math.random);
@@ -60,9 +61,23 @@
     });
   }
 
-  function scalarize(solution, weights, objectives) {
+  function scalarizeWS(solution, weights, objectives) {
     return _.reduce(weights, function (sum, weight, index) {
       return sum + weight * objectives[index](solution);
+    }, 0);
+  }
+
+  function scalarizeTE(solution, weights, objectives) {
+    return _.reduce(weights, function (max, weight, index) {
+      var solValue = objectives[index](solution),
+          dif;
+
+      if (best[index] === undefined || solValue < best[index]) {
+        best[index] = solValue;
+      }
+
+      dif = weight * Math.abs(solValue - best[index]);
+      return dif > max ? dif : max;
     }, 0);
   }
 
@@ -132,6 +147,8 @@
         neighborhoodMap = createNeighborhoodMap(cells, settings.neighborhoodSize),
         archive = [];
 
+    best = [];
+    scalarize = settings.useTchebycheff ? scalarizeTE : scalarizeWS;
     evaluate(cells, settings.objectives);
 
     for (let i = 0; i < settings.numberOfGenerations; i++) {
@@ -145,6 +162,7 @@
       });
     }
 
+    console.log(best);
     return archive;
   }
 

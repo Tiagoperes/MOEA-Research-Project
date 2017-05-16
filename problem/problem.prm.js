@@ -7,7 +7,7 @@
   var nsga = moea.nsga.main.execute,
       spea = moea.spea.main.execute,
       moead = moea.moead.main.execute,
-      ammd = moea.ammd.main.execute;
+      aemmd = moea.aemmd.main.execute;
 
   var graph, weights, costs, root, destinations, dmax, problems, worst, objectives;
 
@@ -88,10 +88,10 @@
     });
   }
 
-  function solveWithAmmd(network, problem) {
+  function solveWithAemmd(network, problem) {
     setPrmInstance(moea.problem.prm.instances['rede' + network], problem);
 
-    return ammd({
+    return aemmd({
       populationSize: 20,
       randomize: _.partial(moea.help.tree.randomize.generateRandom, graph, root, destinations),
       objectives: objectives,
@@ -373,11 +373,11 @@
     solveWithNsga: solveWithNsga,
     solveWithSpea: solveWithSpea,
     solveWithMoead: solveWithMoead,
-    solveWithAmmd: solveWithAmmd,
+    solveWithAemmd: solveWithAemmd,
     testWithNsga: _.partial(test, solveWithNsga),
     testWithSpea: _.partial(test, solveWithSpea),
     testWithMoead: _.partial(test, solveWithMoead),
-    testWithAmmd: _.partial(test, solveWithAmmd),
+    testWithAemmd: _.partial(test, solveWithAemmd),
     testObjectives: testObjectives,
     instances: []
   });
