@@ -184,25 +184,35 @@
   }
 
   function test(algorithm, numberOfObjectives, numberOfItems, numberOfExecutions) {
-    var executions = [];
+    var dbName = 'kp-' + numberOfObjectives + '-' + numberOfItems + '-' + algorithm.name.replace('solveWith', '').toLowerCase();
+    var worst = _.fill(new Array(numberOfObjectives), 0);
+    var numberOfRuns, db, metrics;
 
     numberOfObjectives = numberOfObjectives || 3;
     numberOfItems = numberOfItems || 10;
     numberOfExecutions = numberOfExecutions || 1;
+    setInstance(numberOfObjectives, numberOfItems);
 
-    for (let i = 0; i < numberOfExecutions; i++) {
+    if (!localStorage[dbName]) localStorage[dbName] = '[]';
+    numberOfRuns = numberOfExecutions - JSON.parse(localStorage[dbName]).length;
+
+    for (let i = 0; i < numberOfRuns; i++) {
       console.log('\nEXECUTION ' + (i + 1));
       console.log('---------------------');
       var solutions = algorithm(numberOfObjectives, numberOfItems);
       var uniqS = getSolutionsInObjectiveSpace(_.uniqWith(solutions, _.isEqual), getObjectiveArray());
-	    console.log('Número de soluções encontradas: ' + uniqS.length);
-      var worst = _.fill(new Array(numberOfObjectives), 0);
-      var metrics = moea.help.report.getMetrics(uniqS, instance.pareto, worst);
-      executions.push(metrics);
+      db = JSON.parse(localStorage[dbName]);
+      db.push(uniqS);
+      localStorage[dbName] = JSON.stringify(db);
     }
 
-    var ans = moea.help.report.createReport(executions);
-    document.body.innerHTML = '<pre>' + JSON.stringify(ans).replace(/"er":(\d+\.?\d*),"gd":(\d+\.?\d*),"ps":(\d+\.?\d*),"pcr":\d+\.?\d*,"sp":\d+\.?\d*,"fsp":(\d+\.?\d*),"ms":(\d+\.?\d*),"hv":(\d+\.?\d*)/g, '$1\t$2\t$3\t$4\t$5\t$6').replace(/(\d+)\.(\d+)/g,'$1,$2').replace(/[\{\}]/g, '') + '</pre>';
+    db = JSON.parse(localStorage[dbName]);
+    metrics = _.map(db, function (ndSet) {
+      return moea.help.report.getMetrics(ndSet, instance.pareto, worst);
+    });
+
+    var ans = moea.help.report.createReport(metrics);
+    document.body.innerHTML = '<pre>' + JSON.stringify(ans).replace(/"er":(\d+\.?\d*),"gd":(\d+\.?\d*),"ps":(\d+\.?\d*),"pcr":\d+\.?\d*,"sp":\d+\.?\d*,"fsp":(\d+\.?\d*),"ms":(\d+\.?\d*),"hv":(\d+\.?\d*)/g, '$1\t$2\t$3\t$4\t$5\t$6').replace(/(\d+)\.(\d+)/g,'$1,$2').replace(/[\{\}]/g, '').replace(/,"sd":/g, '\n"sd":') + '</pre>';
     return ans;
   }
 
@@ -222,6 +232,14 @@
     document.body.innerText = ans;
     return ans;
   }
+  
+  function objectivesFixed(numberOfObjectives) {
+    var objs = [];
+    for (let i = 0; i < numberOfObjectives; i++) {
+      objs.push(_.partial(_.get, _, i));
+    }
+    return objs;
+  }
 
   function addToParetoFront(numberOfObjectives, numberOfItems, numberOfExecutions) {
     var result = [];
@@ -237,7 +255,7 @@
 
     var solValues = getSolutionsInObjectiveSpace(result, getObjectiveArray());
     var best = _.concat(instance.pareto, solValues);
-    var ndBest = moea.help.pareto.getNonDominatedSet(best, getObjectiveArray(best[0]));
+    var ndBest = moea.help.pareto.getNonDominatedSet(best, objectivesFixed(numberOfObjectives));
     var removed = _.filter(instance.pareto, function (x) {return !_.find(ndBest, _.partial(_.isEqual, x))}).length;
     var added = _.filter(ndBest, function (x) {return !_.find(instance.pareto, _.partial(_.isEqual, x))}).length;
     var ans = JSON.stringify(ndBest);

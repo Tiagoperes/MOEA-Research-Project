@@ -3,15 +3,22 @@
 
   function createReport(executions) {
     var report = {
-      er: _.sumBy(executions, 'er') / executions.length,
-      gd: _.sumBy(executions, 'gd') / executions.length,
-      ps: _.sumBy(executions, 'ps') / executions.length,
-      pcr: _.sumBy(executions, 'pcr') / executions.length,
-      sp: _.sumBy(executions, 'sp') / executions.length,
-      fsp: _.sumBy(executions, 'fsp') / executions.length,
-      ms: _.sumBy(executions, 'ms') / executions.length,
-      hv: _.sumBy(executions, 'hv') / executions.length
+      mean: {
+        er: _.sumBy(executions, 'er') / executions.length,
+        gd: _.sumBy(executions, 'gd') / executions.length,
+        ps: _.sumBy(executions, 'ps') / executions.length,
+        pcr: _.sumBy(executions, 'pcr') / executions.length,
+        sp: _.sumBy(executions, 'sp') / executions.length,
+        fsp: _.sumBy(executions, 'fsp') / executions.length,
+        ms: _.sumBy(executions, 'ms') / executions.length,
+        hv: _.sumBy(executions, 'hv') / executions.length
+      },
+      sd: {}
     };
+    
+    _.forEach(report.mean, function (mean, metric) {
+      report.sd[metric] = Math.sqrt(_.sumBy(executions, function (execution) {return Math.pow(execution[metric] - report.mean[metric], 2)}) / executions.length);
+    });
 
     report.toString = function () {
       var str = '';

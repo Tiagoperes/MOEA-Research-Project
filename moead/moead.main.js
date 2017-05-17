@@ -93,6 +93,7 @@
       if (childFitness <= cell.fitness) {
         cell.solution = child;
         cell.fitness = childFitness;
+        return false;
       }
     });
   }
