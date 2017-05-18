@@ -7,7 +7,8 @@
       spea = moea.spea.main.execute,
       moead = moea.moead.main.execute,
       aemmt = moea.aemmt.main.execute,
-      aemmd = moea.aemmd.main.execute;
+      aemmd = moea.aemmd.main.execute,
+      nsga3 = moea.nsga3.main.execute;
 
   var instance;
 
@@ -119,6 +120,20 @@
 
     return nsga({
       populationSize: 150,
+      randomize: generateRandom,
+      objectives: getObjectiveArray(),
+      numberOfGenerations: numberOfItems * 2,
+      crossover: {rate: 0.5, method: crossover},
+      mutation: {rate: 2 / numberOfItems, method: moea.help.binary.mutate}
+    });
+  }
+
+  function solveWithNsga3(numberOfObjectives, numberOfItems) {
+    setInstance(numberOfObjectives, numberOfItems);
+
+    return nsga3({
+      populationSize: 150,
+      numberOfMeanPoints: 7, // must be (power of 2) - 1
       randomize: generateRandom,
       objectives: getObjectiveArray(),
       numberOfGenerations: numberOfItems * 2,
@@ -274,11 +289,13 @@
     solveWithMoead: solveWithMoead,
     solveWithAemmt: solveWithAemmt,
     solveWithAemmd: solveWithAemmd,
+    solveWithNsga3: solveWithNsga3,
     testWithNsga: _.partial(test, solveWithNsga),
     testWithSpea: _.partial(test, solveWithSpea),
     testWithMoead: _.partial(test, solveWithMoead),
     testWithAemmt: _.partial(test, solveWithAemmt),
     testWithAemmd: _.partial(test, solveWithAemmd),
+    testWithNsga3: _.partial(test, solveWithNsga3),
     getParetoFront: getParetoFront,
     addToParetoFront: addToParetoFront,
     instances: {}
