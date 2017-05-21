@@ -198,17 +198,50 @@
     });
   }
 
-  function test(algorithm, numberOfObjectives, numberOfItems, numberOfExecutions) {
-    var dbName = 'kp-' + numberOfObjectives + '-' + numberOfItems + '-' + algorithm.name.replace('solveWith', '').toLowerCase();
+  //function test(algorithm, numberOfObjectives, numberOfItems, numberOfExecutions) {
+  //  var dbName = 'kp-' + numberOfObjectives + '-' + numberOfItems + '-' + algorithm.name.replace('solveWith', '').toLowerCase();
+  //  var worst = _.fill(new Array(numberOfObjectives), 0);
+  //  var numberOfRuns, db, metrics;
+  //
+  //  numberOfObjectives = numberOfObjectives || 3;
+  //  numberOfItems = numberOfItems || 10;
+  //  numberOfExecutions = numberOfExecutions || 1;
+  //  setInstance(numberOfObjectives, numberOfItems);
+  //
+  //  if (!localStorage[dbName]) localStorage[dbName] = '[]';
+  //  numberOfRuns = numberOfExecutions - JSON.parse(localStorage[dbName]).length;
+  //
+  //  for (let i = 0; i < numberOfRuns; i++) {
+  //    console.log('\nEXECUTION ' + (i + 1));
+  //    console.log('---------------------');
+  //    var solutions = algorithm(numberOfObjectives, numberOfItems);
+  //    var uniqS = getSolutionsInObjectiveSpace(_.uniqWith(solutions, _.isEqual), getObjectiveArray());
+  //    db = JSON.parse(localStorage[dbName]);
+  //    db.push(uniqS);
+  //    localStorage[dbName] = JSON.stringify(db);
+  //  }
+  //
+  //  db = JSON.parse(localStorage[dbName]);
+  //  metrics = _.map(db, function (ndSet) {
+  //    return moea.help.report.getMetrics(ndSet, instance.pareto, worst);
+  //  });
+  //
+  //  var ans = moea.help.report.createReport(metrics);
+  //  document.body.innerHTML = '<pre>' + JSON.stringify(ans).replace(/"er":(\d+\.?\d*),"gd":(\d+\.?\d*),"ps":(\d+\.?\d*),"pcr":\d+\.?\d*,"sp":\d+\.?\d*,"fsp":(\d+\.?\d*),"ms":(\d+\.?\d*),"hv":(\d+\.?\d*)/g, '$1\t$2\t$3\t$4\t$5\t$6').replace(/(\d+)\.(\d+)/g,'$1,$2').replace(/[\{\}]/g, '').replace(/,"sd":/g, '\n"sd":') + '</pre>';
+  //  return ans;
+  //}
+
+  function test(algorithm, numberOfObjectives, numberOfItems, numberOfExecutions, reset) {
+    var dbName = 'kp-res-' + numberOfObjectives + '-' + numberOfItems + '-' + algorithm.name.replace('solveWith', '').toLowerCase();
     var worst = _.fill(new Array(numberOfObjectives), 0);
-    var numberOfRuns, db, metrics;
+    var numberOfRuns, db;
 
     numberOfObjectives = numberOfObjectives || 3;
     numberOfItems = numberOfItems || 10;
     numberOfExecutions = numberOfExecutions || 1;
     setInstance(numberOfObjectives, numberOfItems);
 
-    if (!localStorage[dbName]) localStorage[dbName] = '[]';
+    if (!localStorage[dbName] || reset) localStorage[dbName] = '[]';
     numberOfRuns = numberOfExecutions - JSON.parse(localStorage[dbName]).length;
 
     for (let i = 0; i < numberOfRuns; i++) {
@@ -216,17 +249,15 @@
       console.log('---------------------');
       var solutions = algorithm(numberOfObjectives, numberOfItems);
       var uniqS = getSolutionsInObjectiveSpace(_.uniqWith(solutions, _.isEqual), getObjectiveArray());
+      var metrics = moea.help.report.getMetrics(uniqS, instance.pareto, worst);
       db = JSON.parse(localStorage[dbName]);
-      db.push(uniqS);
+      db.push(metrics);
       localStorage[dbName] = JSON.stringify(db);
     }
 
     db = JSON.parse(localStorage[dbName]);
-    metrics = _.map(db, function (ndSet) {
-      return moea.help.report.getMetrics(ndSet, instance.pareto, worst);
-    });
 
-    var ans = moea.help.report.createReport(metrics);
+    var ans = moea.help.report.createReport(db);
     document.body.innerHTML = '<pre>' + JSON.stringify(ans).replace(/"er":(\d+\.?\d*),"gd":(\d+\.?\d*),"ps":(\d+\.?\d*),"pcr":\d+\.?\d*,"sp":\d+\.?\d*,"fsp":(\d+\.?\d*),"ms":(\d+\.?\d*),"hv":(\d+\.?\d*)/g, '$1\t$2\t$3\t$4\t$5\t$6').replace(/(\d+)\.(\d+)/g,'$1,$2').replace(/[\{\}]/g, '').replace(/,"sd":/g, '\n"sd":') + '</pre>';
     return ans;
   }

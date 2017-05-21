@@ -179,6 +179,27 @@
     });
   }
 
+  function getNonDominatedSetFromTables(tables) {
+    var solutions = [],
+        numberOfObjectives = _.last(tables).population[0].objectiveValues.length,
+        objectives = [];
+
+    for (let i = 0; i < numberOfObjectives; i++) {
+      objectives.push(function (ind) {
+        return ind.objectiveValues[i];
+      });
+    }
+
+    _.forEach(tables, function (table) {
+      solutions = _.concat(solutions, table.population);
+    });
+
+    console.log(solutions.length);
+    var res = _.uniqWith(moea.help.pareto.getNonDominatedSet(solutions, objectives), function (a,b) {return _.isEqual(a.objectiveValues,b.objectiveValues)});
+    console.log(res.length);
+    return res;
+  }
+
   function aemmt(settings) {
     var tables = createTables(settings.objectives),
         population = generateRandomPopulation(settings.elementsPerTable * tables.length, settings.randomize, settings.objectives),
@@ -196,7 +217,7 @@
       updateTablesWithPopulation(tables, children, settings.elementsPerTable, settings.dominationTableLimit);
     }
 
-    return _.map(tableInvolvingAllObjectives.population, 'solution');
+    return _.map(getNonDominatedSetFromTables(tables), 'solution');
   }
 
   window.moea = window.moea || {};
