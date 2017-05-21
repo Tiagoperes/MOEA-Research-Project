@@ -175,7 +175,7 @@
     setInstance(numberOfObjectives, numberOfItems);
 
     return aemmt({
-      elementsPerTable: 100,
+      elementsPerTable: 50,
       dominationTableLimit: 150,
       randomize: generateRandom,
       objectives: getObjectiveArray(),
