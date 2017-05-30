@@ -3,20 +3,17 @@
 
   var dominates = moea.help.pareto.dominates;
 
-  function generateRandomPopulation(populationSize, randomizationFunction) {
+  function generateRandomPopulation(populationSize, randomizationFunction, objectives) {
     var population = [];
     for (let i = 0; i < populationSize; i++) {
-      population.push(randomizationFunction());
+      let randomSolution = randomizationFunction();
+      population.push({
+        solution: randomSolution,
+        fitness: [],
+        objectiveValues: _.map(objectives, function (objective) {return objective(randomSolution)})
+      });
     }
     return population;
-  }
-
-  function getSubsetFromIndexes(list, indexes) {
-    let subset = [];
-    for (let i = 0; i < indexes.length; i++) {
-      subset.push(list[indexes[i]]);
-    }
-    return subset;
   }
 
   function updateCombinationIndexes(indexes, maxValue) {
@@ -36,31 +33,43 @@
     var combinations = [];
     var indexes = Array.from(Array(size).keys());
     while (_.last(indexes) < list.length) {
-      combinations.push(getSubsetFromIndexes(list, indexes));
+      combinations.push(_.clone(indexes));
       updateCombinationIndexes(indexes, list.length);
     }
     return combinations;
   }
 
-  function createDominationTable(objectives) {
+  function createTableObjectiveFunctions(objectiveIndexes) {
+    return _.map(objectiveIndexes, function (index) {
+      return function(individual) {
+        return individual.objectiveValues[index];
+      }
+    });
+  }
+
+  function createTable(label, objectiveIndexes, maxLength) {
     return {
-      objectives: objectives,
-      solutions: [],
+      label: label,
+      objectives: createTableObjectiveFunctions(objectiveIndexes),
+      population: [],
+      maxLength: maxLength,
       score: 0
     };
   }
 
-  function createDominationTables(objectives) {
+  function createTables(objectives) {
     var tables = [];
     for (let i = 2; i <= objectives.length; i++) {
-      tables = _.concat(tables, _.map(getCombinations(objectives, i), createDominationTable));
+      tables = _.concat(tables, _.map(getCombinations(objectives, i), function (objectiveIndexes, count) {
+        return createTable(tables.length + count, objectiveIndexes);
+      }));
     }
     return tables;
   }
 
   function selectParents(tables) {
-    var p1 = _.sample(_.maxBy(_.sampleSize(tables, 3), 'score').solutions);
-    var p2 = _.sample(_.maxBy(_.sampleSize(tables, 3), 'score').solutions);
+    var p1 = _.maxBy(_.sampleSize(tables, 3), 'score');
+    var p2 = _.maxBy(_.sampleSize(tables, 3), 'score');
     return [p1, p2];
   }
 
@@ -71,65 +80,109 @@
     return solution;
   }
 
-  function crossover(parents, crossoverSettings, mutationSettings) {
-    var children =  crossoverSettings.method(parents[0], parents[1]);
-    return _.map(children, _.partial(mutate, _, mutationSettings));
+  function crossover(parentTables, crossoverSettings, mutationSettings, objectives) {
+    var p1 = _.sample(parentTables[0].population).solution,
+        p2 = _.sample(parentTables[1].population).solution,
+        children =  crossoverSettings.method(p1, p2);
+
+    children = _.map(children, function (c) {
+      return {
+        solution: mutate(c, mutationSettings),
+        fitness: [],
+        objectiveValues: _.map(objectives, function (objective) {return objective(c)})
+      };
+    });
+
+    return children;
   }
 
-  function getSolutionInObjectiveSpace(solution, objectives) {
-    return _.map(objectives, function(objective) {
+  function updateTable(table, individual) {
+    var newSolutions = [];
+
+    for (let i = 0; i < table.population.length; i++) {
+      let isEqual = _.isEqual(table.population[i].objectiveValues, individual.objectiveValues);
+      if (isEqual || dominates(table.population[i], individual, table.objectives)) {
+        return false;
+      }
+      if (!dominates(individual, table.population[i], table.objectives)) {
+        newSolutions.push(table.population[i]);
+      }
+    }
+
+    individual.fitness[table.label] = getWeightingFitness(individual, table.objectives);
+    var allFitness = _.map(newSolutions, function (individual) {return individual.fitness[table.label]});
+    var orderedIndex = getOrderedIndex(allFitness, individual.fitness[table.label], 0, allFitness.length);
+    newSolutions.splice(orderedIndex, 0, individual);
+    if (newSolutions.length > table.maxLength) {
+      newSolutions.pop();
+    }
+
+    table.population = newSolutions;
+    table.score++;
+  }
+
+  function getWeightingFitness(solution, objectives) {
+    var sum = _.sumBy(objectives, function (objective) {
       return objective(solution);
     });
+    return sum / objectives.length;
   }
 
-  function isEqualInObjectiveSpace(a, b, objectives) {
-    a = getSolutionInObjectiveSpace(a, objectives);
-    b = getSolutionInObjectiveSpace(b, objectives);
-    for (let i = 0; i < a.length; i++) {
-      if (Math.abs(a[i] - b[i]) > 0.000000001) return false;
-    }
-    return true;
+  function getOrderedIndex(list, element, begin, end) {
+    var half = begin + Math.floor((end - begin) / 2);
+    if (begin === end) return begin;
+    if (element > list[half]) return getOrderedIndex(list, element, half+1, end);
+    if (element === list[half]) return -1;
+    return getOrderedIndex(list, element, begin, half);
   }
 
-  function updateTableWithSolution(table, solution, shouldUpdateScore) {
-    var newSolutions = [solution];
-
-    for (let i = 0; i < table.solutions.length; i++) {
-      let isEqual = isEqualInObjectiveSpace(table.solutions[i], solution, table.objectives);
-      if (isEqual || dominates(table.solutions[i], solution, table.objectives)) {
-        return;
-      }
-      if (!dominates(solution, table.solutions[i], table.objectives)) {
-        newSolutions.push(table.solutions[i]);
-      }
-    }
-
-    table.solutions = newSolutions;
-    table.score += shouldUpdateScore ? 1 : 0;
-  }
-
-  function updateTablesWithSolutions(tables, solutions, shouldUpdateScore) {
-    _.forEach(solutions, function (s, index) {
-      if (!shouldUpdateScore) console.log('evaluating population member ' + index);
-      _.forEach(tables, _.partial(updateTableWithSolution, _, s, shouldUpdateScore));
+  function updateTablesWithPopulation(tables, population, elementsPerTable, dominationTableLimit) {
+    _.forEach(population, function (individual) {
+      _.forEach(tables, function (table) {
+        updateTable(table, individual);
+      });
     });
+  }
+
+  function getNonDominatedSetFromTables(tables) {
+    var solutions = [],
+        numberOfObjectives = _.last(tables).population[0].objectiveValues.length,
+        objectives = [];
+
+    for (let i = 0; i < numberOfObjectives; i++) {
+      objectives.push(function (ind) {
+        return ind.objectiveValues[i];
+      });
+    }
+
+    _.forEach(tables, function (table) {
+      solutions = _.concat(solutions, table.population);
+    });
+
+    console.log(solutions.length);
+    var res = _.uniqWith(moea.help.pareto.getNonDominatedSet(solutions, objectives), function (a,b) {return _.isEqual(a.objectiveValues,b.objectiveValues)});
+    console.log(res.length);
+    return res;
   }
 
   function aemmd(settings) {
-    var tables = createDominationTables(settings.objectives),
-        population = generateRandomPopulation(settings.populationSize, settings.randomize),
+    var tables = createTables(settings.objectives, settings.elementsPerTable),
+        population = generateRandomPopulation(settings.elementsPerTable * tables.length, settings.randomize, settings.objectives),
         tableInvolvingAllObjectives = _.last(tables);
 
-    updateTablesWithSolutions(tables, population);
+    tableInvolvingAllObjectives.maxLength = settings.dominationTableLimit;
+    updateTablesWithPopulation(tables, population, settings.elementsPerTable, settings.dominationTableLimit);
 
     for (let i = 0; i < settings.numberOfGenerations; i++) {
-      if (i % 100 === 0) console.log('it ' + i +'; biggest table: ' + _.maxBy(tables, 'solutions.length').solutions.length);
+      if (i % 100 === 0) {
+        console.log('it ' + i +'; domination table size: ' + tableInvolvingAllObjectives.population.length);
+      }
       let parents = selectParents(tables);
-      let children = crossover(parents, settings.crossover, settings.mutation);
-      updateTablesWithSolutions(tables, children, true);
+      let children = crossover(parents, settings.crossover, settings.mutation, settings.objectives);
+      updateTablesWithPopulation(tables, children, settings.elementsPerTable, settings.dominationTableLimit);
     }
 
-    return tableInvolvingAllObjectives.solutions;
+    return _.map(getNonDominatedSetFromTables(tables), 'solution');
   }
 
   window.moea = window.moea || {};

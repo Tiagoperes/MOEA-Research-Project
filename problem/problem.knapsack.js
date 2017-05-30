@@ -189,10 +189,11 @@
     setInstance(numberOfObjectives, numberOfItems);
 
     return aemmd({
-      populationSize: 100,
+      elementsPerTable: 50,
+      dominationTableLimit: 150,
       randomize: generateRandom,
       objectives: getObjectiveArray(),
-      numberOfGenerations: numberOfItems * 10,
+      numberOfGenerations: 15000,
       crossover: {method: crossover},
       mutation: {rate: 2 / instance.items, method: moea.help.binary.mutate}
     });
