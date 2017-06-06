@@ -189,8 +189,6 @@
     setInstance(numberOfObjectives, numberOfItems);
 
     return aemmd({
-      elementsPerTable: 50,
-      dominationTableLimit: 150,
       randomize: generateRandom,
       objectives: getObjectiveArray(),
       numberOfGenerations: 15000,
