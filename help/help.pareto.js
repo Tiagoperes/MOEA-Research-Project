@@ -18,6 +18,21 @@
     return better && !worse;
   }
 
+  function dominatesArray(p, q) {
+    var better = false,
+        worse = false,
+        i = 0;
+
+    while (!worse && i < p.length) {
+      let dif = Math.abs(p[i] - q[i]);
+      if (dif > 0.000000001 && p[i] < q[i]) better = true;
+      if (dif > 0.000000001 && p[i] > q[i]) worse = true;
+      i++;
+    }
+
+    return better && !worse;
+  }
+
   function isDominatedBySet(solution, set, objectives) {
     return _.reduce(set, function (result, s) {
 		var d =  dominates(s, solution, objectives);
@@ -40,6 +55,7 @@
   window.moea = window.moea || {};
   _.set(moea, 'help.pareto', {
     dominates: dominates,
+    dominatesArray: dominatesArray,
     isDominatedBySet: isDominatedBySet,
     getNonDominatedSet: getNonDominatedSet
   });
