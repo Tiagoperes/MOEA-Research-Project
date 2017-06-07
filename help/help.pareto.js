@@ -2,6 +2,11 @@
   'use stict';
 
   function dominates(p, q, objectives) {
+    if (objectives) return dominatesObjectives(p, q, objectives);
+    return dominatesArray(p, q);
+  }
+
+  function dominatesObjectives(p, q, objectives) {
     var better = false,
         worse = false,
         i = 0;
@@ -55,7 +60,6 @@
   window.moea = window.moea || {};
   _.set(moea, 'help.pareto', {
     dominates: dominates,
-    dominatesArray: dominatesArray,
     isDominatedBySet: isDominatedBySet,
     getNonDominatedSet: getNonDominatedSet
   });

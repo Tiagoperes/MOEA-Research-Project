@@ -8,7 +8,8 @@
       moead = moea.moead.main.execute,
       aemmt = moea.aemmt.main.execute,
       aemmd = moea.aemmd.main.execute,
-      nsga3 = moea.nsga3.main.execute;
+      nsga3 = moea.nsga3.main.execute,
+      psoga1 = moea.psoga1.main.execute;
 
   var instance;
 
@@ -199,6 +200,20 @@
     });
   }
 
+  function solveWithPsoga1(numberOfObjectives, numberOfItems) {
+    setInstance(numberOfObjectives, numberOfItems);
+
+    return psoga1({
+      constants: {w: 0.7, c1: 0.5, c2: 0.8},
+      populationSize: 80,
+      randomize: generateRandom,
+      objectives: getObjectiveArray(),
+      numberOfGenerations: 20,
+      crossover: {rate: 0.5, method: crossover},
+      mutation: {rate: 2 / instance.items, method: moea.help.binary.mutate}
+    });
+  }
+
   //function test(algorithm, numberOfObjectives, numberOfItems, numberOfExecutions) {
   //  var dbName = 'kp-' + numberOfObjectives + '-' + numberOfItems + '-' + algorithm.name.replace('solveWith', '').toLowerCase();
   //  var worst = _.fill(new Array(numberOfObjectives), 0);
@@ -322,12 +337,14 @@
     solveWithAemmt: solveWithAemmt,
     solveWithAemmd: solveWithAemmd,
     solveWithNsga3: solveWithNsga3,
+    solveWithPsoga1: solveWithPsoga1,
     testWithNsga: _.partial(test, solveWithNsga),
     testWithSpea: _.partial(test, solveWithSpea),
     testWithMoead: _.partial(test, solveWithMoead),
     testWithAemmt: _.partial(test, solveWithAemmt),
     testWithAemmd: _.partial(test, solveWithAemmd),
     testWithNsga3: _.partial(test, solveWithNsga3),
+    testWithPsoga1: _.partial(test, solveWithPsoga1),
     getParetoFront: getParetoFront,
     addToParetoFront: addToParetoFront,
     instances: {}

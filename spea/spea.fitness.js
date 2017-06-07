@@ -56,5 +56,12 @@
   }
 
   window.moea = window.moea || {};
-  _.set(moea, 'spea.fitness.calculate', calculateFitness);
+  _.set(moea, 'spea.fitness', {
+    calculate: calculateFitness,
+    calculateRaw: function (population, objectives) {
+      initializeFitness(population);
+      calculateDomination(population, objectives);
+      calculateRawFitness(population);
+    }
+  });
 }());
