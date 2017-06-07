@@ -2,6 +2,22 @@
   'use strict';
   
   const USE_SOLUTION_VALIDATION = true;
+  //mine
+  //const MOEAD_DIVISIONS = {
+  //  2: 149,
+  //  3: 16,
+  //  4: 8,
+  //  5: 6,
+  //  6: 5
+  //};
+  //article's (3 and 4)
+  const MOEAD_DIVISIONS = {
+    2: 149,
+    3: 25,
+    4: 12,
+    5: 10,
+    6: 8
+  };
 
   var nsga = moea.nsga.main.execute,
       spea = moea.spea.main.execute,
@@ -160,7 +176,7 @@
     setInstance(numberOfObjectives, numberOfItems);
 
     return moead({
-      populationSize: 150,
+      divisions: MOEAD_DIVISIONS[numberOfObjectives],
       neighborhoodSize: 10,
       useTchebycheff: false,
       randomize: generateRandom,

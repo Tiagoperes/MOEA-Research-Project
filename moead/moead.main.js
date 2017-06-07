@@ -4,27 +4,66 @@
   var dominates = moea.help.pareto.dominates,
       scalarize, best;
 
-  function getRandomWeightVector(numberOfObjectives) {
-    var rand = _.map(new Array(numberOfObjectives - 1), Math.random);
+  function generateAllPossibleWeightVectors(numberOfObjectives, divisions) {
     var weights = [];
-    rand.push(0);
-    rand.push(1);
-    rand = _.orderBy(rand);
-    for (let i = 1; i < rand.length; i++) {
-      weights.push(rand[i] - rand[i - 1]);
+    var w = _.fill(new Array(numberOfObjectives), 0);
+    var i = numberOfObjectives - 1;
+    while (i >= 0) {
+      weights.push(_.clone(w));
+      while (w[i] === divisions) {
+        i--;
+      }
+      if (i >= 0) {
+        w[i]++;
+        i++;
+        while (i < numberOfObjectives) {
+          w[i] = 0;
+          i++;
+        }
+        i--;
+      }
     }
     return weights;
   }
 
-  function generateCells(populationSize, numberOfObjectives, randomize) {
+  function generateUniformWeightVectors(numberOfObjectives, divisions) {
+    var weights = _.filter(generateAllPossibleWeightVectors(numberOfObjectives, divisions), function (w) {
+      return _.sum(w) === divisions;
+    });
+    return _.map(weights, _.partial(_.map, _, _.partial(_.divide, _, divisions)));
+  }
+
+  function generateCells(numberOfObjectives, divisions, randomize) {
     var cells = [];
-    for (let i = 0; i < populationSize; i++) {
-      let weights = getRandomWeightVector(numberOfObjectives);
+    var wVectors = generateUniformWeightVectors(numberOfObjectives, divisions);
+    for (let i = 0; i < wVectors.length; i++) {
       let solution = randomize();
-      cells.push({weights: weights, solution: solution});
+      cells.push({weights: wVectors[i], solution: solution});
     }
     return cells;
   }
+
+  //function getRandomWeightVector(numberOfObjectives) {
+  //  var rand = _.map(new Array(numberOfObjectives - 1), Math.random);
+  //  var weights = [];
+  //  rand.push(0);
+  //  rand.push(1);
+  //  rand = _.orderBy(rand);
+  //  for (let i = 1; i < rand.length; i++) {
+  //    weights.push(rand[i] - rand[i - 1]);
+  //  }
+  //  return weights;
+  //}
+
+  //function generateCells(populationSize, numberOfObjectives, randomize) {
+  //  var cells = [];
+  //  for (let i = 0; i < populationSize; i++) {
+  //    let weights = getRandomWeightVector(numberOfObjectives);
+  //    let solution = randomize();
+  //    cells.push({weights: weights, solution: solution});
+  //  }
+  //  return cells;
+  //}
 
   function getEuclideanDistance(a, b) {
     return Math.sqrt(_.reduce(a, function (sum, value, index) {
@@ -144,7 +183,7 @@
   }
 
   function moead(settings) {
-    var cells = generateCells(settings.populationSize, settings.objectives.length, settings.randomize),
+    var cells = generateCells(settings.objectives.length, settings.divisions, settings.randomize),
         neighborhoodMap = createNeighborhoodMap(cells, settings.neighborhoodSize),
         archive = [];
 
