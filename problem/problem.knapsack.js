@@ -208,7 +208,7 @@
       localReproductionRate: 0.9,
       randomize: generateRandom,
       objectives: getObjectiveArray(),
-      numberOfGenerations: 200,
+      numberOfGenerations: 100,
       crossover: {method: crossover},
       mutation: {rate: 2 / instance.items, method: moea.help.binary.mutate}
     });

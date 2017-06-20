@@ -125,9 +125,9 @@
       var angle = _.min(angleByRegion);
       var belongingRegionIndex = _.indexOf(angleByRegion, angle);
       individual.region = regions[belongingRegionIndex];
-      if (!individual.region) {
-        debugger;
-      }
+      //if (!individual.region) {
+      //  debugger;
+      //}
       individual.scalarizedFitness = scalarize(individual.evaluation, individual.region.weights);
       individual.region.population.push(individual);
     });
@@ -268,20 +268,20 @@
     normalize(children, extremes);
   }
 
-  //function initializeExtremes(numberOfObjectives) {
-  //  return {
-  //    min: _.fill(new Array(numberOfObjectives), Infinity),
-  //    max: _.fill(new Array(numberOfObjectives), -Infinity)
-  //  }
-  //}
-
   function initializeExtremes(numberOfObjectives) {
     return {
-      min: [-17570, -16974, -18207],
-      max: [-13927, -12764, -15178],
-      dif: [-3643, -4210, -3029]
+      min: _.fill(new Array(numberOfObjectives), Infinity),
+      max: _.fill(new Array(numberOfObjectives), -Infinity)
     }
   }
+
+  //function initializeExtremes(numberOfObjectives) {
+  //  return {
+  //    min: [-17570, -16974, -18207],
+  //    max: [-13927, -12764, -15178],
+  //    dif: [-3643, -4210, -3029]
+  //  }
+  //}
 
   function findIndexOfFirstFrontNotDominatingIndividual(fronts, individual) {
     var dominated = true,
@@ -369,7 +369,7 @@
         extremes = initializeExtremes(settings.objectives.length);
 
     createPointersToFronts(fronts);
-    //updateExtremes(population, extremes);
+    updateExtremes(population, extremes);
     normalize(population, extremes);
     createNeighborhoods(regions, settings.neighborhoodSize);
     distributePopulation(population, regions);
