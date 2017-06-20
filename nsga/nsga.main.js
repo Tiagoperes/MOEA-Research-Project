@@ -1,46 +1,33 @@
 (function () {
   'use strict';
 
-  function nsga(settings) {
-    var population = generateRandomPopulation(settings.populationSize, settings.randomize);
-    var fronts = moea.nsga.ranking.rank(population, settings.objectives);
-    for (let i = 0; i < settings.numberOfGenerations; i++) {
-      console.log(i);
-
-      if (settings.filter) {
-        population = settings.filter(population);
-        fronts = moea.nsga.ranking.rank(population, settings.objectives);
-      }
-      let parents = selectParents(population, settings.crossover.rate);
-      let children = generateOffspring(parents, settings.crossover.method, settings.mutation);
-      population = _.concat(population, children);
-      fronts = moea.nsga.ranking.rank(population, settings.objectives);
-      calculateDistances(fronts, settings.objectives);
-
-      population = naturalSelection(fronts, settings.populationSize, settings.objectives);
+  function createIndividual(solution, objectives) {
+    return {
+      solution: solution,
+      evaluation: moea.help.pareto.getSolutionInObjectiveSpace(solution, objectives)
     }
-    return fronts[0];
   }
 
-  function generateRandomPopulation(populationSize, randomizationFunction) {
+  function generateRandomPopulation(populationSize, randomizationFunction, objectives) {
     var population = [];
     for (let i = 0; i < populationSize; i++) {
-      population.push(randomizationFunction());
+      population.push(createIndividual(randomizationFunction(), objectives));
     }
     return population;
   }
 
-  function calculateDistances(fronts, objectives) {
-    var calculate = moea.nsga.crowding.calculateDistances;
-    _.forEach(fronts, _.partial(calculate, _, objectives));
+  function calculateDistances(fronts) {
+    _.forEach(fronts, _.partial(moea.nsga.crowding.calculateDistances));
   }
 
   function selectParents(population, crossoverRate) {
     var pairs = [],
         maxPairs = _.floor(crossoverRate * population.length);
+
     while (pairs.length < maxPairs) {
       pairs.push([tournament(population), tournament(population)]);
     }
+
     return pairs;
   }
 
@@ -48,10 +35,11 @@
     return _.minBy(_.sampleSize(population, 2), 'fitness.rank');
   }
 
-  function generateOffspring(parents, crossoverMethod, mutation) {
+  function generateOffspring(parents, crossoverMethod, mutation, objectives) {
     return _.flatten(_.map(parents, function (pair) {
-      var children = crossoverMethod(pair[0], pair[1]);
-      return _.map(children, _.partial(mutate, _, mutation));
+      var children = crossoverMethod(pair[0].solution, pair[1].solution);
+      var mutated = _.map(children, _.partial(mutate, _, mutation));
+      return _.map(mutated, _.partial(createIndividual, _, objectives));
     }));
   }
 
@@ -63,7 +51,7 @@
     return solution;
   }
 
-  function naturalSelection(fronts, maxPopulationSize, objectives) {
+  function naturalSelection(fronts, maxPopulationSize) {
     var population = [];
     while (population.length < maxPopulationSize) {
       let front = _.head(fronts);
@@ -76,6 +64,34 @@
       }
     }
     return population;
+  }
+
+  function randomizeIdenticalIndividuals(population, randomize, objectives) {
+    var newPop = _.uniqWith(population, 'evaluation');
+    for (let i = newPop.length; i < population.length; i++) {
+      newPop.push(createIndividual(randomize()), objectives)
+    }
+    return newPop;
+  }
+
+  function nsga(settings) {
+    var population = generateRandomPopulation(settings.populationSize, settings.randomize, settings.objectives);
+    var fronts = moea.nsga.ranking.rank(population, 'evaluation');
+
+    for (let i = 0; i < settings.numberOfGenerations; i++) {
+      console.log(i);
+      let parents = selectParents(population, settings.crossover.rate);
+      let children = generateOffspring(parents, settings.crossover.method, settings.mutation, settings.objectives);
+      population = _.concat(population, children);
+      if (settings.useFilter) {
+        population = randomizeIdenticalIndividuals(population, settings.randomize, settings.objectives);
+      }
+      fronts = moea.nsga.ranking.rank(population, 'evaluation');
+      calculateDistances(fronts);
+      population = naturalSelection(fronts, settings.populationSize);
+    }
+
+    return _.map(fronts[0], 'solution');
   }
 
   window.moea = window.moea || {};
