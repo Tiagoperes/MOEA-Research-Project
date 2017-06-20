@@ -240,6 +240,52 @@
       mutation: {rate: 2 / instance.items, method: moea.help.binary.mutate}
     });
   }
+  
+  function getTime(algorithm, numberOfObjectives, numberOfItems, numberOfExecutions) {
+    var times = [], mean, sd;
+    
+    for (let i = 0; i < numberOfExecutions; i++) {
+      let start = new Date().getTime();
+      algorithm(numberOfObjectives, numberOfItems);
+      let end = new Date().getTime();
+      times.push(end - start);
+    }
+    
+    mean = _.sum(times) / numberOfExecutions;
+    sd = Math.sqrt(_.sumBy(times, function (time) {return Math.pow(time - mean, 2)}) / numberOfExecutions);
+    
+    return {mean: mean, sd: sd};
+  }
+  
+  function getTimesForAlgorithm(algorithm, numberOfExecutions) {
+    var times = {};
+    var items = 50;
+    while (items <= 200) {
+      for (let i = 2; i <= 6; i++) {
+        console.log('------------------------------------------------');
+        console.log(algorithm.name + '-' + i + '-' + items);
+        console.log('------------------------------------------------');
+        times[i + '-' + items] = getTime(algorithm, i, items, numberOfExecutions)
+      }
+      items *= 2;
+    }
+    
+    localStorage['times-' + algorithm.name] = JSON.stringify(times);
+    return times;
+  }
+  
+  function getTimes(numberOfExecutions) {
+    var times = {
+      spea: getTimesForAlgorithm(solveWithSpea, numberOfExecutions),
+      nsga: getTimesForAlgorithm(solveWithNsga, numberOfExecutions),
+      nsga3: getTimesForAlgorithm(solveWithNsga3, numberOfExecutions),
+      aemmt: getTimesForAlgorithm(solveWithAemmt, numberOfExecutions),
+      moead: getTimesForAlgorithm(solveWithMoead, numberOfExecutions)
+    }
+    localStorage['times'] = JSON.stringify(times);
+    document.body.innerText = localStorage['times'].replace(/[\{},]/g, '\n');
+    return times;
+  }
 
   //function test(algorithm, numberOfObjectives, numberOfItems, numberOfExecutions) {
   //  var dbName = 'kp-' + numberOfObjectives + '-' + numberOfItems + '-' + algorithm.name.replace('solveWith', '').toLowerCase();
@@ -376,6 +422,8 @@
     testWithNsga3: _.partial(test, solveWithNsga3),
     getParetoFront: getParetoFront,
     addToParetoFront: addToParetoFront,
+    getTimes: getTimes,
+    getTimesForAlgorithm: getTimesForAlgorithm,
     instances: {}
   });
 }());
