@@ -7,6 +7,7 @@
   var nsga = moea.nsga.main.execute,
       spea = moea.spea.main.execute,
       moead = moea.moead.main.execute,
+      aemmt = moea.aemmt.main.execute,
       aemmd = moea.aemmd.main.execute;
 
   var graph, weights, costs, root, destinations, dmax, problems, worst, objectives;
@@ -88,11 +89,25 @@
     });
   }
 
+  function solveWithAemmt(network, problem) {
+    setPrmInstance(moea.problem.prm.instances['rede' + network], problem);
+
+    return aemmt({
+      elementsPerTable: 50,
+      dominationTableLimit: 150,
+      randomize: _.partial(moea.help.tree.randomize.generateRandom, graph, root, destinations),
+      objectives: objectives,
+      numberOfGenerations: 10000,
+      crossover: {method: _.partial(moea.help.tree.dijkstraGa.crossover, _, _, graph, costs, root, destinations)},
+      mutation: {rate: 0.2, method: _.partial(moea.help.tree.dijkstraGa.mutate, _, graph, root, destinations, DISCONNECTION_RATE)}
+    });
+  }
+
   function solveWithAemmd(network, problem) {
     setPrmInstance(moea.problem.prm.instances['rede' + network], problem);
 
     return aemmd({
-      populationSize: 20,
+      elementsPerTable: 50,
       randomize: _.partial(moea.help.tree.randomize.generateRandom, graph, root, destinations),
       objectives: objectives,
       numberOfGenerations: 10000,
@@ -131,7 +146,9 @@
       executions.push(metrics);
     }
 
-    return moea.help.report.createReport(executions);
+    var ans = moea.help.report.createReport(executions);
+    document.body.innerHTML = '<pre>' + JSON.stringify(ans).replace(/"er":(\d+\.?\d*),"gd":(\d+\.?\d*),"ps":(\d+\.?\d*),"pcr":\d+\.?\d*,"sp":\d+\.?\d*,"fsp":(\d+\.?\d*),"ms":(\d+\.?\d*),"hv":(\d+\.?\d*)/g, '$1\t$2\t$3\t$4\t$5\t$6').replace(/(\d+)\.(\d+)/g,'$1,$2').replace(/[\{\}]/g, '').replace(/,"sd":/g, '\n"sd":') + '</pre>';
+    return ans;
   }
 
   function isValidTree(tree) {
@@ -373,10 +390,12 @@
     solveWithNsga: solveWithNsga,
     solveWithSpea: solveWithSpea,
     solveWithMoead: solveWithMoead,
+    solveWithAemmt: solveWithAemmt,
     solveWithAemmd: solveWithAemmd,
     testWithNsga: _.partial(test, solveWithNsga),
     testWithSpea: _.partial(test, solveWithSpea),
     testWithMoead: _.partial(test, solveWithMoead),
+    testWithAemmt: _.partial(test, solveWithAemmt),
     testWithAemmd: _.partial(test, solveWithAemmd),
     testObjectives: testObjectives,
     instances: []

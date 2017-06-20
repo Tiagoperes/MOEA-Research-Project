@@ -18,10 +18,18 @@
     5: 10,
     6: 8
   };
+  const MOEADD_DIVISIONS = {
+    2: 149,
+    3: 16,
+    4: 8,
+    5: 6,
+    6: 6
+  };
 
   var nsga = moea.nsga.main.execute,
       spea = moea.spea.main.execute,
       moead = moea.moead.main.execute,
+      moeadd = moea.moeadd.main.execute,
       aemmt = moea.aemmt.main.execute,
       aemmd = moea.aemmd.main.execute,
       nsga3 = moea.nsga3.main.execute;
@@ -39,6 +47,9 @@
       individual[i] = !!_.random(0, 1);
     }
     makeValid(individual);
+    //if (getWeight(individual) > instance.capacity) {
+    //  debugger;
+    //}
     return individual;
   }
 
@@ -94,7 +105,8 @@
       return result;
     }, []);
   }
-  
+
+  // fixme: sometimes, the solution will still be invalid after going through this process, dunno why
   function makeValid(solution) {
 	  var weight = getWeight(solution);
     var indexesWithTrue = getIndexesWithTrue(solution);
@@ -138,7 +150,7 @@
       populationSize: 150,
       randomize: generateRandom,
       objectives: getObjectiveArray(),
-      numberOfGenerations: numberOfItems * 2,
+      numberOfGenerations: 100,
       crossover: {rate: 0.5, method: crossover},
       mutation: {rate: 2 / numberOfItems, method: moea.help.binary.mutate}
     });
@@ -152,7 +164,7 @@
       numberOfMeanPoints: 7, // must be (power of 2) - 1
       randomize: generateRandom,
       objectives: getObjectiveArray(),
-      numberOfGenerations: numberOfItems * 2,
+      numberOfGenerations: 100,
       crossover: {rate: 0.5, method: crossover},
       mutation: {rate: 2 / numberOfItems, method: moea.help.binary.mutate}
     });
@@ -166,7 +178,7 @@
       archiveSize: 150,
       randomize: generateRandom,
       objectives: getObjectiveArray(),
-      numberOfGenerations: numberOfItems * 2,
+      numberOfGenerations: 100,
       crossover: {rate: 0.5, method: crossover},
       mutation: {rate: 2 / instance.items, method: moea.help.binary.mutate}
     });
@@ -181,7 +193,22 @@
       useTchebycheff: false,
       randomize: generateRandom,
       objectives: getObjectiveArray(),
-      numberOfGenerations: numberOfItems * 2,
+      numberOfGenerations: 200,
+      crossover: {method: crossover},
+      mutation: {rate: 2 / instance.items, method: moea.help.binary.mutate}
+    });
+  }
+
+  function solveWithMoeadd(numberOfObjectives, numberOfItems) {
+    setInstance(numberOfObjectives, numberOfItems);
+
+    return moeadd({
+      divisions: MOEADD_DIVISIONS[numberOfObjectives],
+      neighborhoodSize: 10,
+      localReproductionRate: 0.9,
+      randomize: generateRandom,
+      objectives: getObjectiveArray(),
+      numberOfGenerations: 200,
       crossover: {method: crossover},
       mutation: {rate: 2 / instance.items, method: moea.help.binary.mutate}
     });
@@ -195,7 +222,7 @@
       dominationTableLimit: 150,
       randomize: generateRandom,
       objectives: getObjectiveArray(),
-      numberOfGenerations: numberOfItems * 150,
+      numberOfGenerations: 7500,
       crossover: {method: crossover},
       mutation: {rate: 2 / instance.items, method: moea.help.binary.mutate}
     });
@@ -205,9 +232,10 @@
     setInstance(numberOfObjectives, numberOfItems);
 
     return aemmd({
+      elementsPerTable: 50,
       randomize: generateRandom,
       objectives: getObjectiveArray(),
-      numberOfGenerations: 15000,
+      numberOfGenerations: 7500,
       crossover: {method: crossover},
       mutation: {rate: 2 / instance.items, method: moea.help.binary.mutate}
     });
@@ -283,9 +311,11 @@
     for (let i = 0; i < numberOfExecutions; i++) {
       console.log('------ execucao ' + i + ' ------');
       result = _.uniqWith(_.concat(result, solveWithNsga(numberOfObjectives, numberOfItems)), _.isEqual);
-      result = _.uniqWith(_.concat(result, solveWithSpea(numberOfObjectives, numberOfItems)), _.isEqual);
+      //result = _.uniqWith(_.concat(result, solveWithSpea(numberOfObjectives, numberOfItems)), _.isEqual);
       //result = _.uniqWith(_.concat(result, solveWithMoead(numberOfObjectives, numberOfItems)), _.isEqual);
-      //result = _.uniqWith(_.concat(result, solveWithAmmd(numberOfObjectives, numberOfItems)), _.isEqual);
+      result = _.uniqWith(_.concat(result, solveWithAemmd(numberOfObjectives, numberOfItems)), _.isEqual);
+      result = _.uniqWith(_.concat(result, solveWithAemmt(numberOfObjectives, numberOfItems)), _.isEqual);
+      result = _.uniqWith(_.concat(result, solveWithNsga3(numberOfObjectives, numberOfItems)), _.isEqual);
     }
 
     var solValues = getSolutionsInObjectiveSpace(result, getObjectiveArray());
@@ -333,12 +363,14 @@
     solveWithNsga: solveWithNsga,
     solveWithSpea: solveWithSpea,
     solveWithMoead: solveWithMoead,
+    solveWithMoeadd: solveWithMoeadd,
     solveWithAemmt: solveWithAemmt,
     solveWithAemmd: solveWithAemmd,
     solveWithNsga3: solveWithNsga3,
     testWithNsga: _.partial(test, solveWithNsga),
     testWithSpea: _.partial(test, solveWithSpea),
     testWithMoead: _.partial(test, solveWithMoead),
+    testWithMoeadd: _.partial(test, solveWithMoeadd),
     testWithAemmt: _.partial(test, solveWithAemmt),
     testWithAemmd: _.partial(test, solveWithAemmd),
     testWithNsga3: _.partial(test, solveWithNsga3),
