@@ -31,6 +31,23 @@
     }
   }
 
+  function naturalSelection(fronts, maxPopulationSize) {
+    var population = [];
+    _.forEach(fronts, _.partial(calculateDistances));
+
+    while (population.length < maxPopulationSize) {
+      let front = _.head(fronts);
+      if (population.length + front.length <= maxPopulationSize) {
+        population = _.concat(population, front);
+        fronts = _.tail(fronts);
+      } else {
+        let frontOrderedByDistance = _.orderBy(front, 'fitness.distance', 'desc');
+        population = _.concat(population, _.take(frontOrderedByDistance, maxPopulationSize - population.length));
+      }
+    }
+    return population;
+  }
+
   window.moea = window.moea || {};
-  _.set(moea, 'nsga.crowding.calculateDistances', calculateDistances);
+  _.set(moea, 'nsga.selection.crowding.select', naturalSelection);
 }());

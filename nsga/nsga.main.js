@@ -16,10 +16,6 @@
     return population;
   }
 
-  function calculateDistances(fronts) {
-    _.forEach(fronts, _.partial(moea.nsga.crowding.calculateDistances));
-  }
-
   function selectParents(population, crossoverRate) {
     var pairs = [],
         maxPairs = _.floor(crossoverRate * population.length);
@@ -51,21 +47,6 @@
     return solution;
   }
 
-  function naturalSelection(fronts, maxPopulationSize) {
-    var population = [];
-    while (population.length < maxPopulationSize) {
-      let front = _.head(fronts);
-      if (population.length + front.length <= maxPopulationSize) {
-        population = _.concat(population, front);
-        fronts = _.tail(fronts);
-      } else {
-        let frontOrderedByDistance = _.orderBy(front, 'fitness.distance', 'desc');
-        population = _.concat(population, _.take(frontOrderedByDistance, maxPopulationSize - population.length));
-      }
-    }
-    return population;
-  }
-
   function randomizeIdenticalIndividuals(population, randomize, objectives) {
     var newPop = _.uniqWith(population, 'evaluation');
     for (let i = newPop.length; i < population.length; i++) {
@@ -74,7 +55,7 @@
     return newPop;
   }
 
-  function nsga(settings) {
+  function nsgaGeneral(settings, select) {
     var population = generateRandomPopulation(settings.populationSize, settings.randomize, settings.objectives);
     var fronts = moea.nsga.ranking.rank(population, 'evaluation');
 
@@ -87,13 +68,22 @@
         population = randomizeIdenticalIndividuals(population, settings.randomize, settings.objectives);
       }
       fronts = moea.nsga.ranking.rank(population, 'evaluation');
-      calculateDistances(fronts);
-      population = naturalSelection(fronts, settings.populationSize);
+      population = select(fronts, settings.populationSize);
     }
 
     return _.map(fronts[0], 'solution');
   }
 
+  function nsga2(settings) {
+    return nsgaGeneral(settings, moea.nsga.selection.crowding.select);
+  }
+
+  function nsga3(settings) {
+    var select = _.partial(moea.nsga.selection.referencePoint.select, _, _, settings.numberOfMeanPoints);
+    return nsgaGeneral(settings, select);
+  }
+
   window.moea = window.moea || {};
-  _.set(moea, 'nsga.main.execute', nsga);
+  _.set(moea, 'nsga.main.execute', nsga2);
+  _.set(moea, 'nsga3.main.execute', nsga3);
 }());

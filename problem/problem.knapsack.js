@@ -150,7 +150,7 @@
       populationSize: 150,
       randomize: generateRandom,
       objectives: getObjectiveArray(),
-      numberOfGenerations: 100,
+      numberOfGenerations: 400,
       crossover: {rate: 0.5, method: crossover},
       mutation: {rate: 2 / numberOfItems, method: moea.help.binary.mutate}
     });
