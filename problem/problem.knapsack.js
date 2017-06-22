@@ -150,7 +150,7 @@
       populationSize: 150,
       randomize: generateRandom,
       objectives: getObjectiveArray(),
-      numberOfGenerations: 400,
+      numberOfGenerations: 100,
       crossover: {rate: 0.5, method: crossover},
       mutation: {rate: 2 / numberOfItems, method: moea.help.binary.mutate}
     });
@@ -176,6 +176,7 @@
     return spea({
       populationSize: 150,
       archiveSize: 150,
+      normalize: false,
       randomize: generateRandom,
       objectives: getObjectiveArray(),
       numberOfGenerations: 100,

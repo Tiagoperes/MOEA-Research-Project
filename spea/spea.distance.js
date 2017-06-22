@@ -1,59 +1,47 @@
 (function () {
   'use strict';
 
-  function euclideanDistance(a, b, objectives) {
-    return Math.sqrt(_.reduce(objectives, function (sum, objective) {
-      return sum + Math.pow(objective(a) - objective(b), 2);
-    }, 0));
-  }
-
-  function createDistanceKeys(population) {
+  function createIds(population) {
     for (let i = 0; i < population.length; i++) {
-      population[i].distanceMatrixKey = i;
+      population[i].id = i;
     }
   }
 
-  function initializeDistanceMatrix(population) {
-    var distanceMatrix = [];
-    for (let i = 0; i < population.length; i++) {
-      distanceMatrix[i] = [];
-      distanceMatrix[i][i] = 0;
-    }
-    return distanceMatrix;
+  function initializeDistanceArrays(population) {
+    _.forEach(population, function (individual) {
+      individual.distances = [];
+      individual.distances[individual.id] = 0;
+    });
   }
 
-  function calculateDistances(population, objectives, distanceMatrix) {
+  function calculateDistanceArrays(population, property) {
     for (let i = 0; i < population.length; i++) {
       for (let j = i + 1; j < population.length; j++) {
-        let distance = euclideanDistance(population[i], population[j], objectives);
-        distanceMatrix[i][j] = distance;
-        distanceMatrix[j][i] = distance;
+        let distance = moea.help.math.getEuclideanDistance(population[i][property], population[j][property]);
+        population[i].distances[j] = distance;
+        population[j].distances[i] = distance;
       }
     }
   }
 
-  function calculateDistanceMatrix(population, objectives) {
-    var distanceMatrix;
-    createDistanceKeys(population);
-    distanceMatrix = initializeDistanceMatrix(population);
-    calculateDistances(population, objectives, distanceMatrix);
-    return distanceMatrix;
+  function calculateNearestNeighbors(population) {
+    _.forEach(population, function (individual) {
+      var distancesWithIndividuals = _.map(individual.distances, function (distance, index) {
+        return {distance: distance, individual: population[index]};
+      });
+      individual.nearestNeighbors = _.orderBy(distancesWithIndividuals, 'distance')
+    });
   }
 
-  function getNeighborsDistances(neighborhood, element, distanceMatrix) {
-    var nearestNeighbors = [], eid = element.distanceMatrixKey;
-    _.forEach(neighborhood, function (neighbor) {
-      var nid = neighbor.distanceMatrixKey;
-      if (eid !== nid) {
-        nearestNeighbors.push(distanceMatrix[eid][nid]);
-      }
-    });
-    return _.orderBy(nearestNeighbors);
+  function calculateDistances(population, property) {
+    createIds(population);
+    initializeDistanceArrays(population);
+    calculateDistanceArrays(population, property);
+    calculateNearestNeighbors(population);
   }
 
   window.moea = window.moea || {};
   _.set(moea, 'spea.distance', {
-    calculateDistanceMatrix: calculateDistanceMatrix,
-    getNeighborsDistances: getNeighborsDistances
+    calculateDistances: calculateDistances
   });
 }());

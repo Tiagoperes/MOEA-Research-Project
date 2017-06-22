@@ -13,13 +13,13 @@
     });
   }
 
-  function calculateDomination(population, objectives) {
+  function calculateDomination(population, property) {
     for (let i = 0; i < population.length; i++) {
       for (let j = i + 1; j < population.length; j++) {
-        if (dominates(population[i], population[j], objectives)) {
+        if (dominates(population[i], population[j], property)) {
           population[i].fitness.strength++;
           population[j].fitness.dominatedByArray.push(i);
-        } else if (dominates(population[j], population[i], objectives)) {
+        } else if (dominates(population[j], population[i], property)) {
           population[i].fitness.dominatedByArray.push(j);
           population[j].fitness.strength++;
         }
@@ -35,24 +35,23 @@
     });
   }
 
-  function calculateDensity(distancesToNeighbors) {
-    var k = Math.round(Math.sqrt(distancesToNeighbors.length));
-    return 1 / (distancesToNeighbors[k] + 2);
+  function calculateDensity(individual) {
+    var k = Math.round(Math.sqrt(individual.nearestNeighbors.length));
+    return 1 / (individual.nearestNeighbors[k].distance + 2);
   }
 
-  function calculateOverallFitnessValues(population, distanceMatrix) {
+  function calculateOverallFitnessValues(population) {
     _.forEach(population, function (individual) {
-      var distanceToNeighbors = distanceMatrix[individual.distanceMatrixKey],
-          density = calculateDensity(distanceToNeighbors);
+      var density = calculateDensity(individual);
       individual.fitness.value = individual.fitness.raw + density;
     });
   }
 
-  function calculateFitness(population, objectives, distanceMatrix) {
+  function calculateFitness(population, property) {
     initializeFitness(population);
-    calculateDomination(population, objectives);
+    calculateDomination(population, property);
     calculateRawFitness(population);
-    calculateOverallFitnessValues(population, distanceMatrix);
+    calculateOverallFitnessValues(population);
   }
 
   window.moea = window.moea || {};

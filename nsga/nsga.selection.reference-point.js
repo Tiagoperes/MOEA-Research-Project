@@ -109,16 +109,10 @@
     return meanPoints;
   }
 
-  function getEuclideanDistance(a, b) {
-    return Math.sqrt(_.reduce(a, function (sum, value, index) {
-      return sum + Math.pow(value - b[index], 2);
-    }, 0));
-  }
-
   function distributeFrontToNiches(front, niches) {
     _.forEach(front, function (individual) {
       var niche = _.minBy(niches, function (n) {
-        return getEuclideanDistance(individual.normalizedEvaluation, n.point);
+        return moea.help.math.getEuclideanDistance(individual.normalizedEvaluation, n.point);
       });
       niche.population.push(individual);
       niche.score++;
