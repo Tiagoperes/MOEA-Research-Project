@@ -177,6 +177,7 @@
       populationSize: 150,
       archiveSize: 150,
       normalize: false,
+      useSDE: true,
       randomize: generateRandom,
       objectives: getObjectiveArray(),
       numberOfGenerations: 100,

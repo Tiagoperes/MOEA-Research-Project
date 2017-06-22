@@ -14,10 +14,29 @@
     });
   }
 
+  function translateSDE(positionToTranslate, reference) {
+    return _.map(positionToTranslate, function (value, index) {
+      return value < reference[index] ? reference[index] : value;
+    });
+  }
+
+  function calculateSDEDistanceArrays(population, property) {
+    for (let i = 0; i < population.length; i++) {
+      for (let j = 0; j < population.length; j++) {
+        if (i === j) continue;
+        let a = population[i][property];
+        let b = translateSDE(population[j][property], a);
+        population[i].distances[j] = moea.help.math.getEuclideanDistance(a, b);
+      }
+    }
+  }
+
   function calculateDistanceArrays(population, property) {
     for (let i = 0; i < population.length; i++) {
       for (let j = i + 1; j < population.length; j++) {
-        let distance = moea.help.math.getEuclideanDistance(population[i][property], population[j][property]);
+        let a = population[i][property];
+        let b = population[j][property];
+        let distance = moea.help.math.getEuclideanDistance(a, b);
         population[i].distances[j] = distance;
         population[j].distances[i] = distance;
       }
@@ -33,10 +52,11 @@
     });
   }
 
-  function calculateDistances(population, property) {
+  function calculateDistances(population, property, useSDE) {
+    var calculateDistances = useSDE ? calculateSDEDistanceArrays : calculateDistanceArrays;
     createIds(population);
     initializeDistanceArrays(population);
-    calculateDistanceArrays(population, property);
+    calculateDistances(population, property);
     calculateNearestNeighbors(population);
   }
 

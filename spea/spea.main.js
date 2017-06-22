@@ -76,7 +76,7 @@
       population = ga.generateOffspring(parents, settings);
       if (settings.normalize) normalize(archive, population, extremes);
       let everybody = _.concat(population, archive);
-      moea.spea.distance.calculateDistances(everybody, evaluationProperty);
+      moea.spea.distance.calculateDistances(everybody, evaluationProperty, settings.useSDE);
       moea.spea.fitness.calculate(everybody, evaluationProperty);
       archive = moea.spea.selection.selectArchive(everybody, settings.archiveSize);
     }
