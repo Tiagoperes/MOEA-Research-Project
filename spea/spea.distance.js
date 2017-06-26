@@ -36,7 +36,7 @@
       for (let j = i + 1; j < population.length; j++) {
         let a = population[i][property];
         let b = population[j][property];
-        let distance = moea.help.math.getEuclideanDistance(a, b);
+        let distance = moea.help.distance.getEuclideanDistance(a, b);
         population[i].distances[j] = distance;
         population[j].distances[i] = distance;
       }
@@ -52,8 +52,8 @@
     });
   }
 
-  function calculateDistances(population, property, useSDE) {
-    var calculateDistances = useSDE ? calculateSDEDistanceArrays : calculateDistanceArrays;
+  function calculateDistances(population, property, shouldUseSDE) {
+    var calculateDistances = shouldUseSDE ? calculateSDEDistanceArrays : calculateDistanceArrays;
     createIds(population);
     initializeDistanceArrays(population);
     calculateDistances(population, property);

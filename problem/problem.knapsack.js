@@ -176,8 +176,8 @@
     return spea({
       populationSize: 150,
       archiveSize: 150,
-      normalize: false,
-      useSDE: true,
+      shouldNormalize: false,
+      shouldUseSDE: true,
       randomize: generateRandom,
       objectives: getObjectiveArray(),
       numberOfGenerations: 100,
