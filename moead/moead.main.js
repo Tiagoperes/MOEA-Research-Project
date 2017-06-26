@@ -2,12 +2,14 @@
   'use strict';
 
   function generateCells(divisions, randomize, objectives) {
-    var weightVectors = moea.moead.neighborhood.generateVectors(numberOfObjectives, divisions),
+    var weightVectors = moea.moead.neighborhood.generateWeightVectors(objectives.length, divisions),
         population = moea.ga.generateRandomPopulation(weightVectors.length, randomize, objectives);
 
-    return _.map(population, function (individual, index) {
+    _.forEach(population, function (individual, index) {
       individual.weights = weightVectors[index];
     });
+
+    return population;
   }
 
   function calculateFitness(cells, scalarize) {
@@ -29,7 +31,8 @@
   }
 
   function moead(settings) {
-    var cells = generateCells(settings.objectives.length, settings.divisions, settings.randomize),
+    var ga= moea.ga,
+        cells = generateCells(settings.divisions, settings.randomize, settings.objectives),
         scalarize = moea.moead.scalarization.scalarizeWS,
         archive = [];
 
@@ -39,14 +42,14 @@
     for (let i = 0; i < settings.numberOfGenerations; i++) {
       console.log(i);
       _.forEach(cells, function (cell) {
-        let parents = _.map(_.sampleSize(cell.neighborhood, 2), 'solution');
+        let parents = _.sampleSize(cell.neighborhood, 2);
         let child = _.sample(ga.generateOffspring([parents], settings));
         updateNeighborhood(cell.neighborhood, child, scalarize);
         archive = moea.help.pareto.updateNonDominatedSet(archive, child, 'evaluation');
       });
     }
 
-    return archive;
+    return _.map(archive, 'solution');
   }
 
   window.moea = window.moea || {};
