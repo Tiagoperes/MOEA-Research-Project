@@ -45,7 +45,7 @@
       let popExcludingNeighbor = _.filter(population, _.partial(_.negate(_.isEqual), neighborhoodPopulation[0]));
       return [neighborhoodPopulation[0], _.sample(popExcludingNeighbor)];
     }
-    return [_.sampleSize(neighborhoodPopulation, 2)];
+    return _.sampleSize(neighborhoodPopulation, 2);
   }
 
   function updateArchive(archive, children) {
@@ -76,7 +76,7 @@
       //console.log(_.map(regions, 'population.length').join(', '));
       _.forEach(regions, function (region) {
         let parents = selectParents(region.neighborhood, population, settings.localReproductionRate);
-        let children = ga.generateOffspring(parents, settings);
+        let children = ga.generateOffspring([parents], settings);
         norm.normalize([], children, extremes);
         _.forEach(children, _.partial(ranking.updateFronts, fronts));
         updatePopulation(population, regions, fronts, children);
