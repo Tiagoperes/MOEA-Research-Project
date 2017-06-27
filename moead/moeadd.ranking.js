@@ -6,7 +6,7 @@
 
   function findIndexOfFirstFrontNotDominatingIndividual(fronts, individual) {
     var dominated = true,
-      i = 0;
+        i = 0;
 
     while (i < fronts.length && dominated) {
       dominated = false;
@@ -22,8 +22,8 @@
 
   function moveDominatedToNextFront(dominatedIndividuals, frontIndex, fronts) {
     var ndSet,
-      front = fronts[frontIndex],
-      nextFront = fronts[frontIndex + 1];
+        front = fronts[frontIndex],
+        nextFront = fronts[frontIndex + 1];
 
     if (_.isEmpty(dominatedIndividuals)) return;
 
@@ -46,7 +46,7 @@
 
   function updateFronts(fronts, child) {
     var frontIndex = findIndexOfFirstFrontNotDominatingIndividual(fronts, child),
-      dominatedByChild;
+        dominatedByChild;
 
     if (frontIndex === fronts.length) {
       child.front = [child];
@@ -78,6 +78,6 @@
   window.moea = window.moea || {};
   _.set(moea, 'moeadd.ranking', {
     updateFronts: updateFronts,
-    createPointersToFronts: createPointersToFronts,
+    createPointersToFronts: createPointersToFronts
   });
 }());

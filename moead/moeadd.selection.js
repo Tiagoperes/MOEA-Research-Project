@@ -10,8 +10,8 @@
 
   function removeIndividual(individual, population, fronts) {
     var indexToRemoveRegion = individual.region.population.indexOf(individual),
-      indexToRemoveFront = individual.front.indexOf(individual),
-      indexToRemovePopulation = population.indexOf(individual);
+        indexToRemoveFront = individual.front.indexOf(individual),
+        indexToRemovePopulation = population.indexOf(individual);
 
     individual.region.population.splice(indexToRemoveRegion, 1);
     individual.front.splice(indexToRemoveFront, 1);
