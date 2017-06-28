@@ -55,11 +55,21 @@
     return newPop;
   }
 
+  function getNumberOfGenerations(childrenPerGeneration, desiredNumberOfComparisons) {
+    return Math.ceil(desiredNumberOfComparisons / childrenPerGeneration);
+  }
+
+  function logGeneration(generationIndex, numberOfGenerations) {
+    console.log((generationIndex + 1) + ' of ' + numberOfGenerations + ' generations');
+  }
+
   window.moea = window.moea || {};
   moea.ga = {
     generateRandomPopulation: generateRandomPopulation,
     selectParents: selectParents,
     generateOffspring: generateOffspring,
-    randomizeIdenticalIndividuals: randomizeIdenticalIndividuals
+    randomizeIdenticalIndividuals: randomizeIdenticalIndividuals,
+    getNumberOfGenerations: getNumberOfGenerations,
+    logGeneration: logGeneration
   };
 }());

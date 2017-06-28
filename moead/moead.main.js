@@ -30,17 +30,21 @@
     });
   }
 
+
+
   function moead(settings) {
-    var ga= moea.ga,
+    var ga = moea.ga,
         cells = generateCells(settings.divisions, settings.randomize, settings.objectives),
+        ngens = settings.numberOfGenerations || ga.getNumberOfGenerations(cells.length, settings.comparisons),
         scalarize = moea.moead.scalarization.scalarizeWS,
         archive = [];
 
     moea.moead.neighborhood.createNeighborhoods(cells, settings.neighborhoodSize);
     calculateFitness(cells, scalarize);
+    console.log('population size: ' + cells.length);
 
-    for (let i = 0; i < settings.numberOfGenerations; i++) {
-      console.log(i);
+    for (let i = 0; i < ngens; i++) {
+      ga.logGeneration(i, ngens);
       _.forEach(cells, function (cell) {
         let parents = _.sampleSize(cell.neighborhood, 2);
         let child = _.sample(ga.generateOffspring([parents], settings));

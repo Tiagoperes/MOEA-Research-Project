@@ -61,6 +61,7 @@
         ranking = moea.moeadd.ranking,
         neighborhood = moea.moead.neighborhood,
         regions = generateRegions(settings.objectives.length, settings.divisions),
+        ngens = settings.numberOfGenerations || ga.getNumberOfGenerations(regions.length, settings.comparisons),
         population = ga.generateRandomPopulation(regions.length, settings.randomize, settings.objectives),
         fronts = moea.nsga.ranking.rank(population, 'evaluation'),
         archive = [],
@@ -71,15 +72,16 @@
     neighborhood.createNeighborhoods(regions, settings.neighborhoodSize);
     distributePopulation(population, regions);
 
-    for (let i = 0; i < settings.numberOfGenerations; i++) {
-      console.log(i);
+    for (let i = 0; i < ngens; i++) {
+      ga.logGeneration(i, ngens);
       //console.log(_.map(regions, 'population.length').join(', '));
       _.forEach(regions, function (region) {
         let parents = selectParents(region.neighborhood, population, settings.localReproductionRate);
-        let children = ga.generateOffspring([parents], settings);
+        //let children = ga.generateOffspring([parents], settings);
+        let children = [_.sample(ga.generateOffspring([parents], settings))];
         norm.normalize([], children, extremes);
         _.forEach(children, _.partial(ranking.updateFronts, fronts));
-        updatePopulation(population, regions, fronts, children);
+        updatePopulation(population, regions, fronts, [child]);
         archive = updateArchive(archive, children);
       });
     }

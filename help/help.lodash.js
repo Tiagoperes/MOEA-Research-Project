@@ -39,4 +39,9 @@
     return _.applyOperationBetweenArrays.apply(this, _.concat([_.divide], arguments));
   };
 
+  _.factorial = function (n) {
+    if (n === 1) return n;
+    return n * _.factorial(n - 1);
+  };
+
 }());

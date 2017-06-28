@@ -3,21 +3,21 @@
   
   const USE_SOLUTION_VALIDATION = true;
   //mine
-  //const MOEAD_DIVISIONS = {
-  //  2: 149,
-  //  3: 16,
-  //  4: 8,
-  //  5: 6,
-  //  6: 5
-  //};
-  //article's (3 and 4)
   const MOEAD_DIVISIONS = {
     2: 149,
-    3: 25,
-    4: 12,
-    5: 10,
-    6: 8
+    3: 16,
+    4: 8,
+    5: 6,
+    6: 5
   };
+  //article's (3 and 4)
+  //const MOEAD_DIVISIONS = {
+  //  2: 149,
+  //  3: 25,
+  //  4: 12,
+  //  5: 10,
+  //  6: 8
+  //};
   const MOEADD_DIVISIONS = {
     2: 149,
     3: 16,
@@ -195,7 +195,7 @@
       useTchebycheff: false,
       randomize: generateRandom,
       objectives: getObjectiveArray(),
-      numberOfGenerations: 200,
+      comparisons: 30000,
       crossover: {method: crossover},
       mutation: {rate: 2 / instance.items, method: moea.help.binary.mutate}
     });
