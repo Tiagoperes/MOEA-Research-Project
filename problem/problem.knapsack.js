@@ -23,7 +23,7 @@
     3: 16,
     4: 8,
     5: 6,
-    6: 6
+    6: 5
   };
 
   var nsga = moea.nsga.main.execute,
@@ -206,11 +206,11 @@
 
     return moeadd({
       divisions: MOEADD_DIVISIONS[numberOfObjectives],
+      comparisons: 30000,
       neighborhoodSize: 10,
       localReproductionRate: 0.9,
       randomize: generateRandom,
       objectives: getObjectiveArray(),
-      numberOfGenerations: 100,
       crossover: {method: crossover},
       mutation: {rate: 2 / instance.items, method: moea.help.binary.mutate}
     });

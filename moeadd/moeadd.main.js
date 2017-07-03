@@ -11,7 +11,7 @@
   function distributePopulationRandomly(population, regions) {
     _.forEach(population, function (individual) {
       var region = _.sample(regions);
-      individual.scalarizedFitness = scalarize(individual.evaluation, region.weights);
+      individual.scalarizedFitness = moea.moead.scalarization.scalarizeWS(individual.evaluation, region.weights);
       individual.region = region;
       region.population.push(individual);
     });
@@ -77,11 +77,10 @@
       //console.log(_.map(regions, 'population.length').join(', '));
       _.forEach(regions, function (region) {
         let parents = selectParents(region.neighborhood, population, settings.localReproductionRate);
-        //let children = ga.generateOffspring([parents], settings);
         let children = [_.sample(ga.generateOffspring([parents], settings))];
         norm.normalize([], children, extremes);
         _.forEach(children, _.partial(ranking.updateFronts, fronts));
-        updatePopulation(population, regions, fronts, [child]);
+        updatePopulation(population, regions, fronts, children);
         archive = updateArchive(archive, children);
       });
     }
