@@ -60,7 +60,8 @@
   }
 
   function logGeneration(generationIndex, numberOfGenerations) {
-    console.log((generationIndex + 1) + ' of ' + numberOfGenerations + ' generations');
+    var percent = Math.floor(generationIndex * 100 / numberOfGenerations);
+    console.log((generationIndex + 1) + ' of ' + numberOfGenerations + ' generations (' + percent + '%)');
   }
 
   window.moea = window.moea || {};
