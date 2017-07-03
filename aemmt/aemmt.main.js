@@ -55,12 +55,12 @@
     return children;
   }
 
-  function getNonDominatedSetFromTables(tables) {
+  function getNonDominatedSetFromTables(tables, property) {
     var population = _.reduce(tables, function (pop, table) {
       return _.concat(pop, table.population);
     }, []);
-    population = _.uniqBy(population, 'evaluation');
-    return moea.help.pareto.getNonDominatedSet(population, 'evaluation');
+    population = _.uniqBy(population, property);
+    return moea.help.pareto.getNonDominatedSet(population, property);
   }
 
   function resetTablesScores(tables) {
@@ -76,12 +76,20 @@
   }
 
   function aemmt(settings) {
-    var tables = createTables(settings.objectives),
+    var norm = moea.help.normalization,
+        extremes = norm.initializeExtremes(settings.objectives.length),
+        evaluationProperty = 'evaluation',
+        tables = createTables(settings.objectives),
         populationSize = settings.elementsPerTable * tables.length,
         population = moea.ga.generateRandomPopulation(populationSize, settings.randomize, settings.objectives);
 
+    if (settings.shouldNormalize) {
+      norm.normalize([], population, extremes);
+      evaluationProperty = 'normalizedEvaluation';
+    }
+
     initializeFitness(population);
-    moea.aemmt.selection.updateTables(tables, population, settings.elementsPerTable, settings.dominationTableLimit);
+    moea.aemmt.selection.updateTables(tables, population, settings.elementsPerTable, settings.dominationTableLimit, evaluationProperty);
 
     for (let i = 0; i < settings.numberOfGenerations; i++) {
       if (i % 100 === 0) {
@@ -90,10 +98,15 @@
       }
       let parents = selectParents(tables);
       let children = crossover(parents, settings);
-      moea.aemmt.selection.updateTables(tables, children, settings.elementsPerTable, settings.dominationTableLimit);
+
+      if (settings.shouldNormalize) {
+        norm.normalize(_.flatten(_.map(tables, 'population')), children, extremes);
+      }
+
+      moea.aemmt.selection.updateTables(tables, children, settings.elementsPerTable, settings.dominationTableLimit, evaluationProperty);
     }
 
-    return _.map(getNonDominatedSetFromTables(tables), 'solution');
+    return _.map(getNonDominatedSetFromTables(tables, evaluationProperty), 'solution');
   }
 
   window.moea = window.moea || {};

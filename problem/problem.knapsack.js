@@ -222,6 +222,7 @@
     return aemmt({
       elementsPerTable: 50,
       dominationTableLimit: 150,
+      shouldNormalize: false,
       randomize: generateRandom,
       objectives: getObjectiveArray(),
       numberOfGenerations: 15000,
