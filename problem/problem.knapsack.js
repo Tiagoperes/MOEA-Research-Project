@@ -224,7 +224,7 @@
       dominationTableLimit: 150,
       randomize: generateRandom,
       objectives: getObjectiveArray(),
-      numberOfGenerations: 7500,
+      numberOfGenerations: 15000,
       crossover: {method: crossover},
       mutation: {rate: 2 / instance.items, method: moea.help.binary.mutate}
     });

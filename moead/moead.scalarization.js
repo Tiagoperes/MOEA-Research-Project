@@ -1,12 +1,6 @@
 (function () {
   'use strict';
 
-  function scalarizeWS(values, weights) {
-    return _.reduce(weights, function (sum, weight, index) {
-      return sum + weight * values[index];
-    }, 0);
-  }
-
   function scalarizeTE(values, best, weights) {
     return _.reduce(weights, function (max, weight, index) {
       var solValue = values[index],
@@ -23,7 +17,7 @@
 
   window.moea = window.moea || {};
   _.set(moea, 'moead.scalarization', {
-    scalarizeWS: scalarizeWS,
+    scalarizeWS: _.weightedSum,
     scalarizeTE: scalarizeTE
   });
 }());

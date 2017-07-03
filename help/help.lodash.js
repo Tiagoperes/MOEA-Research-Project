@@ -44,4 +44,37 @@
     return n * _.factorial(n - 1);
   };
 
+  _.weightedSum = function (array, weights) {
+    return _.reduce(array, function (sum, value, index) {
+      return sum + value * weights[index];
+    }, 0);
+  };
+
+  _.allCombinations = function (array, combinationSize) {
+    function updateCombinationIndexes(indexes, maxValue) {
+      var i = indexes.length - 1;
+      indexes[i]++;
+
+      while (i > 0 && _.last(indexes) >= maxValue) {
+        i--;
+        indexes[i]++;
+        for (let j = i + 1; j < indexes.length; j++) {
+          indexes[j] = indexes[j-1] + 1;
+        }
+      }
+    }
+
+    function getCombinations(list, size) {
+      var combinations = [];
+      var indexes = Array.from(Array(size).keys());
+      while (_.last(indexes) < list.length) {
+        combinations.push(_.clone(indexes));
+        updateCombinationIndexes(indexes, list.length);
+      }
+      return combinations;
+    }
+
+    return getCombinations(array, combinationSize);
+  };
+
 }());
