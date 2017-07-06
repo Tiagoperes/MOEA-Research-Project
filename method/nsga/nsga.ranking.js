@@ -62,5 +62,5 @@
   }
 
   window.moea = window.moea || {};
-  _.set(moea, 'nsga.ranking.rank', rank);
+  _.set(moea, 'method.nsga.ranking.rank', rank);
 }());

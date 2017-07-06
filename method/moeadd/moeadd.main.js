@@ -2,7 +2,7 @@
   'use strict';
 
   function generateRegions(numberOfObjectives, divisions) {
-    var wVectors = moea.moead.neighborhood.generateWeightVectors(numberOfObjectives, divisions);
+    var wVectors = moea.method.moead.neighborhood.generateWeightVectors(numberOfObjectives, divisions);
     return _.map(wVectors, function (wVector) {
       return {weights: wVector, population: []};
     });
@@ -11,7 +11,7 @@
   function distributePopulationRandomly(population, regions) {
     _.forEach(population, function (individual) {
       var region = _.sample(regions);
-      individual.scalarizedFitness = moea.moead.scalarization.scalarizeWS(individual.evaluation, region.weights);
+      individual.scalarizedFitness = moea.method.moead.scalarization.scalarizeWS(individual.evaluation, region.weights);
       individual.region = region;
       region.population.push(individual);
     });
@@ -25,7 +25,7 @@
       var angle = _.min(angleByRegion);
       var belongingRegionIndex = _.indexOf(angleByRegion, angle);
       individual.region = regions[belongingRegionIndex];
-      individual.scalarizedFitness = moea.moead.scalarization.scalarizeWS(individual.evaluation, individual.region.weights);
+      individual.scalarizedFitness = moea.method.moead.scalarization.scalarizeWS(individual.evaluation, individual.region.weights);
       individual.region.population.push(individual);
     });
   }
@@ -33,7 +33,7 @@
   function updatePopulation(population, regions, fronts, children) {
     distributePopulation(children, regions);
     _.pushAll(population, children);
-    moea.moeadd.selection.select(population, regions, fronts, children.length);
+    moea.method.moeadd.selection.select(population, regions, fronts, children.length);
   }
 
   function selectParents(neighborhood, population, localReproductionRate) {
@@ -56,14 +56,14 @@
   }
 
   function moeadd(settings) {
-    var ga = moea.ga,
+    var ga = moea.method.ga,
         norm = moea.help.normalization,
-        ranking = moea.moeadd.ranking,
-        neighborhood = moea.moead.neighborhood,
+        ranking = moea.method.moeadd.ranking,
+        neighborhood = moea.method.moead.neighborhood,
         regions = generateRegions(settings.objectives.length, settings.divisions),
-        ngens = settings.numberOfGenerations || ga.getNumberOfGenerations(regions.length, settings.comparisons),
+        ngens = ga.getNumberOfGenerations(regions.length, settings.comparisons),
         population = ga.generateRandomPopulation(regions.length, settings.randomize, settings.objectives),
-        fronts = moea.nsga.ranking.rank(population, 'evaluation'),
+        fronts = moea.method.nsga.ranking.rank(population, 'evaluation'),
         archive = [],
         extremes = norm.initializeExtremes(settings.objectives.length);
 
@@ -89,5 +89,5 @@
   }
 
   window.moea = window.moea || {};
-  _.set(moea, 'moeadd.main.execute', moeadd);
+  _.set(moea, 'method.moeadd.main.execute', moeadd);
 }());

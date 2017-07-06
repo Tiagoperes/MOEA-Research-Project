@@ -67,5 +67,5 @@
   }
 
   window.moea = window.moea || {};
-  _.set(moea, 'aemmt.selection.updateTables', updateTables);
+  _.set(moea, 'method.aemmt.selection.updateTables', updateTables);
 }());

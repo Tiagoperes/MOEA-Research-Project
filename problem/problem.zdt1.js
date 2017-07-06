@@ -7,8 +7,8 @@
         MAX = 1,
         N = 30;
 
-  var nsga = moea.nsga.main.execute,
-      spea = moea.spea.main.execute;
+  var nsga = moea.method.nsga.main.execute,
+      spea = moea.method.spea.main.execute;
 
   function solveWithNsga(seed) {
     moea.help.random.setSeed(seed);

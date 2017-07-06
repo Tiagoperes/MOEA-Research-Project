@@ -1,6 +1,8 @@
 (function () {
   'use strict';
 
+  var isLogActive = true;
+
   function createIndividual(solution, objectives) {
     return {
       solution: solution,
@@ -60,17 +62,31 @@
   }
 
   function logGeneration(generationIndex, numberOfGenerations) {
-    var percent = Math.floor(generationIndex * 100 / numberOfGenerations);
-    console.log((generationIndex + 1) + ' of ' + numberOfGenerations + ' generations (' + percent + '%)');
+    var percent;
+    if (isLogActive) {
+      percent = Math.floor(generationIndex * 100 / numberOfGenerations);
+      console.log((generationIndex + 1) + ' of ' + numberOfGenerations + ' generations (' + percent + '%)');
+    }
+  }
+
+  function activateLog() {
+    isLogActive = true;
+  }
+
+  function deactivateLog() {
+    isLogActive = false;
   }
 
   window.moea = window.moea || {};
-  moea.ga = {
+  _.set(moea, 'method.ga', {
     generateRandomPopulation: generateRandomPopulation,
     selectParents: selectParents,
     generateOffspring: generateOffspring,
     randomizeIdenticalIndividuals: randomizeIdenticalIndividuals,
     getNumberOfGenerations: getNumberOfGenerations,
-    logGeneration: logGeneration
-  };
+    logGeneration: logGeneration,
+    activateLog: activateLog,
+    deactivateLog: deactivateLog
+  });
+
 }());

@@ -16,7 +16,7 @@
   }
 
   window.moea = window.moea || {};
-  _.set(moea, 'moead.scalarization', {
+  _.set(moea, 'method.moead.scalarization', {
     scalarizeWS: _.weightedSum,
     scalarizeTE: scalarizeTE
   });

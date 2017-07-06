@@ -45,7 +45,7 @@
   function crossover(parentTables, settings) {
     var p1 = _.sample(parentTables[0].population),
         p2 = _.sample(parentTables[1].population),
-        children =  moea.ga.generateOffspring([[p1, p2]], settings);
+        children =  moea.method.ga.generateOffspring([[p1, p2]], settings);
 
     _.forEach(children, function (c) {
       c.parentTables = parentTables;
@@ -81,7 +81,7 @@
         evaluationProperty = 'evaluation',
         tables = createTables(settings.objectives),
         populationSize = settings.elementsPerTable * tables.length,
-        population = moea.ga.generateRandomPopulation(populationSize, settings.randomize, settings.objectives);
+        population = moea.method.ga.generateRandomPopulation(populationSize, settings.randomize, settings.objectives);
 
     if (settings.shouldNormalize) {
       norm.normalize([], population, extremes);
@@ -89,12 +89,12 @@
     }
 
     initializeFitness(population);
-    moea.aemmt.selection.updateTables(tables, population, settings.elementsPerTable, settings.dominationTableLimit, evaluationProperty);
+    moea.method.aemmt.selection.updateTables(tables, population, settings.elementsPerTable, settings.dominationTableLimit, evaluationProperty);
 
     for (let i = 0; i < settings.numberOfGenerations; i++) {
       if (i % 100 === 0) {
         resetTablesScores(tables);
-        moea.ga.logGeneration(i, settings.numberOfGenerations);
+        moea.method.ga.logGeneration(i, settings.numberOfGenerations);
       }
       let parents = selectParents(tables);
       let children = crossover(parents, settings);
@@ -103,12 +103,12 @@
         norm.normalize(_.flatten(_.map(tables, 'population')), children, extremes);
       }
 
-      moea.aemmt.selection.updateTables(tables, children, settings.elementsPerTable, settings.dominationTableLimit, evaluationProperty);
+      moea.method.aemmt.selection.updateTables(tables, children, settings.elementsPerTable, settings.dominationTableLimit, evaluationProperty);
     }
 
     return _.map(getNonDominatedSetFromTables(tables, evaluationProperty), 'solution');
   }
 
   window.moea = window.moea || {};
-  _.set(moea, 'aemmt.main.execute', aemmt);
+  _.set(moea, 'method.aemmt.main.execute', aemmt);
 }());

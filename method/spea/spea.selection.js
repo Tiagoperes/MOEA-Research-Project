@@ -78,7 +78,7 @@
   }
 
   window.moea = window.moea || {};
-  _.set(moea, 'spea.selection', {
+  _.set(moea, 'method.spea.selection', {
     selectArchive: selectArchive,
     isNonDominated: isNonDominated
   });

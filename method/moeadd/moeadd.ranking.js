@@ -76,7 +76,7 @@
   }
 
   window.moea = window.moea || {};
-  _.set(moea, 'moeadd.ranking', {
+  _.set(moea, 'method.moeadd.ranking', {
     updateFronts: updateFronts,
     createPointersToFronts: createPointersToFronts
   });

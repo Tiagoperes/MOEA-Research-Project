@@ -49,5 +49,5 @@
   }
 
   window.moea = window.moea || {};
-  _.set(moea, 'nsga.selection.crowding.select', naturalSelection);
+  _.set(moea, 'method.nsga.selection.crowding.select', naturalSelection);
 }());

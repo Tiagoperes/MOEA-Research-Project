@@ -4,11 +4,11 @@
   const DISCONNECTION_RATE = 0.1,
         DATA_FLOW = 300;
 
-  var nsga = moea.nsga.main.execute,
-      spea = moea.spea.main.execute,
-      moead = moea.moead.main.execute,
-      aemmt = moea.aemmt.main.execute,
-      aemmd = moea.aemmd.main.execute;
+  var nsga = moea.method.nsga.main.execute,
+      spea = moea.method.spea.main.execute,
+      moead = moea.method.moead.main.execute,
+      aemmt = moea.method.aemmt.main.execute,
+      aemmd = moea.method.aemmd.main.execute;
 
   var graph, weights, costs, root, destinations, dmax, problems, worst, objectives;
 

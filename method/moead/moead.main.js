@@ -2,8 +2,8 @@
   'use strict';
 
   function generateCells(divisions, randomize, objectives) {
-    var weightVectors = moea.moead.neighborhood.generateWeightVectors(objectives.length, divisions),
-        population = moea.ga.generateRandomPopulation(weightVectors.length, randomize, objectives);
+    var weightVectors = moea.method.moead.neighborhood.generateWeightVectors(objectives.length, divisions),
+        population = moea.method.ga.generateRandomPopulation(weightVectors.length, randomize, objectives);
 
     _.forEach(population, function (individual, index) {
       individual.weights = weightVectors[index];
@@ -33,15 +33,14 @@
 
 
   function moead(settings) {
-    var ga = moea.ga,
+    var ga = moea.method.ga,
         cells = generateCells(settings.divisions, settings.randomize, settings.objectives),
-        ngens = settings.numberOfGenerations || ga.getNumberOfGenerations(cells.length, settings.comparisons),
-        scalarize = moea.moead.scalarization.scalarizeWS,
+        ngens = ga.getNumberOfGenerations(cells.length, settings.comparisons),
+        scalarize = moea.method.moead.scalarization.scalarizeWS,
         archive = [];
 
-    moea.moead.neighborhood.createNeighborhoods(cells, settings.neighborhoodSize);
+    moea.method.moead.neighborhood.createNeighborhoods(cells, settings.neighborhoodSize);
     calculateFitness(cells, scalarize);
-    console.log('population size: ' + cells.length);
 
     for (let i = 0; i < ngens; i++) {
       ga.logGeneration(i, ngens);
@@ -57,5 +56,5 @@
   }
 
   window.moea = window.moea || {};
-  _.set(moea, 'moead.main.execute', moead);
+  _.set(moea, 'method.moead.main.execute', moead);
 }());

@@ -6,16 +6,16 @@
   }
 
   function nsgaGeneral(settings, select) {
-    var ga = moea.ga,
+    var ga = moea.method.ga,
         population = ga.generateRandomPopulation(settings.populationSize, settings.randomize, settings.objectives),
-        fronts = moea.nsga.ranking.rank(population, 'evaluation');
+        fronts = moea.method.nsga.ranking.rank(population, 'evaluation');
 
     for (let i = 0; i < settings.numberOfGenerations; i++) {
-      console.log(i);
+      ga.logGeneration(i, settings.numberOfGenerations);
       let parents = ga.selectParents(population, settings.crossover.rate, tournament);
       let children = ga.generateOffspring(parents, settings);
       population = _.concat(population, children);
-      fronts = moea.nsga.ranking.rank(population, 'evaluation');
+      fronts = moea.method.nsga.ranking.rank(population, 'evaluation');
       population = select(fronts, settings.populationSize);
     }
 
@@ -23,15 +23,15 @@
   }
 
   function nsga2(settings) {
-    return nsgaGeneral(settings, moea.nsga.selection.crowding.select);
+    return nsgaGeneral(settings, moea.method.nsga.selection.crowding.select);
   }
 
   function nsga3(settings) {
-    var select = _.partial(moea.nsga.selection.referencePoint.select, _, _, settings.numberOfMeanPoints);
+    var select = _.partial(moea.method.nsga.selection.referencePoint.select, _, _, settings.numberOfMeanPoints);
     return nsgaGeneral(settings, select);
   }
 
   window.moea = window.moea || {};
-  _.set(moea, 'nsga.main.execute', nsga2);
-  _.set(moea, 'nsga3.main.execute', nsga3);
+  _.set(moea, 'method.nsga.main.execute', nsga2);
+  _.set(moea, 'method.nsga3.main.execute', nsga3);
 }());

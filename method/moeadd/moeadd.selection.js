@@ -56,5 +56,5 @@
   }
 
   window.moea = window.moea || {};
-  _.set(moea, 'moeadd.selection.select', select);
+  _.set(moea, 'method.moeadd.selection.select', select);
 }());

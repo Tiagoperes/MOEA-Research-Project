@@ -26,7 +26,7 @@
         if (i === j) continue;
         let a = population[i][property];
         let b = translateSDE(population[j][property], a);
-        population[i].distances[j] = moea.help.math.getEuclideanDistance(a, b);
+        population[i].distances[j] = moea.help.distance.getEuclideanDistance(a, b);
       }
     }
   }
@@ -61,7 +61,7 @@
   }
 
   window.moea = window.moea || {};
-  _.set(moea, 'spea.distance', {
+  _.set(moea, 'method.spea.distance', {
     calculateDistances: calculateDistances
   });
 }());

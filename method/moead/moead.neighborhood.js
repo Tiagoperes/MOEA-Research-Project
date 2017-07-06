@@ -38,7 +38,7 @@
   }
 
   window.moea = window.moea || {};
-  _.set(moea, 'moead.neighborhood', {
+  _.set(moea, 'method.moead.neighborhood', {
     generateWeightVectors: generateWeightVectors,
     createNeighborhoods: createNeighborhoods
   });

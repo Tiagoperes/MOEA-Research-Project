@@ -55,5 +55,5 @@
   }
 
   window.moea = window.moea || {};
-  _.set(moea, 'spea.fitness.calculate', calculateFitness);
+  _.set(moea, 'method.spea.fitness.calculate', calculateFitness);
 }());

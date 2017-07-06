@@ -112,7 +112,7 @@
   function distributeFrontToNiches(front, niches) {
     _.forEach(front, function (individual) {
       var niche = _.minBy(niches, function (n) {
-        return moea.help.math.getEuclideanDistance(individual.normalizedEvaluation, n.point);
+        return moea.help.distance.getEuclideanDistance(individual.normalizedEvaluation, n.point);
       });
       niche.population.push(individual);
       niche.score++;
@@ -180,5 +180,5 @@
   }
 
   window.moea = window.moea || {};
-  _.set(moea, 'nsga.selection.referencePoint.select', naturalSelection);
+  _.set(moea, 'method.nsga.selection.referencePoint.select', naturalSelection);
 }());

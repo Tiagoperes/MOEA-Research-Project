@@ -39,7 +39,7 @@
   function crossover(parentTables, settings) {
     var p1 = _.sample(parentTables[0].population),
         p2 = _.sample(parentTables[1].population),
-        children = moea.ga.generateOffspring([[p1, p2]], settings);
+        children = moea.method.ga.generateOffspring([[p1, p2]], settings);
 
     _.forEach(children, function (c) {
       c.fitness = [];
@@ -61,15 +61,16 @@
   }
 
   function aemmd(settings) {
-    var tables = createTables(settings.objectives),
-        population = moea.ga.generateRandomPopulation(settings.elementsPerTable * tables.length, settings.randomize, settings.objectives),
+    var ga = moea.method.ga,
+        tables = createTables(settings.objectives),
+        population = ga.generateRandomPopulation(settings.elementsPerTable * tables.length, settings.randomize, settings.objectives),
         tableInvolvingAllObjectives = _.last(tables);
 
     updateTablesWithPopulation(tables, population);
 
     for (let i = 0; i < settings.numberOfGenerations; i++) {
       if (i % 100 === 0) {
-        moea.ga.logGeneration(i, settings.numberOfGenerations);
+        ga.logGeneration(i, settings.numberOfGenerations);
       }
       let parents = selectParents(tables);
       let children = crossover(parents, settings);
@@ -80,5 +81,5 @@
   }
 
   window.moea = window.moea || {};
-  _.set(moea, 'aemmd.main.execute', aemmd);
+  _.set(moea, 'method.aemmd.main.execute', aemmd);
 }());
