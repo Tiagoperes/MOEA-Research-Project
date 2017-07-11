@@ -25,7 +25,7 @@
     var config = {
       global: {
         populationSize: 150,
-        numberOfGenerations: 200,
+        numberOfGenerations: (instance.items < 100) ? 100 : 200,
         shouldNormalize: false,
         randomize: _.partial(mkp.generateRandom, instance),
         objectives: mkp.getObjectives(instance),
@@ -39,28 +39,28 @@
       spea: {
         archiveSize: 150,
         shouldNormalize: false,
-        shouldUseSDE: true
+        shouldUseSDE: false
       },
       moead: {
         divisions: MOEAD_DIVISIONS[instance.objectives],
-        comparisons: 30000,
+        comparisons: (instance.items < 100) ? 15000 : 30000,
         neighborhoodSize: 10,
         useTchebycheff: false
       },
       moeadd: {
         divisions: MOEAD_DIVISIONS[instance.objectives],
-        comparisons: 30000,
+        comparisons: (instance.items < 100) ? 15000 : 30000,
         neighborhoodSize: 10,
         localReproductionRate: 0.9
       },
       aemmt: {
         elementsPerTable: 50,
         dominationTableLimit: 150,
-        numberOfGenerations: 15000
+        numberOfGenerations: (instance.items < 100) ? 7500 : 15000
       },
       aemmd: {
         elementsPerTable: 50,
-        numberOfGenerations: 15000
+        numberOfGenerations: (instance.items < 100) ? 7500 : 15000
       }
     };
 
