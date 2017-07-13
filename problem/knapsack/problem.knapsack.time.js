@@ -31,32 +31,20 @@
     return times;
   }
 
-  function createProgress(numberOfExecutions, numberOfAlgorithms, numberOfObjectiveFormulations) {
-    var percent = 0,
-        step = 100 / (numberOfExecutions * numberOfAlgorithms * numberOfObjectiveFormulations);
-
-    return {
-      next: function () {
-        percent += step;
-        console.log(Math.floor(percent) + '%');
-      }
-    };
-  }
-
   function printTimes(times) {
     document.body.innerHTML = '<pre>' + JSON.stringify(times).replace(/[\{},]/g, '\n') + '</pre>';
   }
 
-  function getTimes(numberOfExecutions, algorithms, objectives) {
+  function getTimes(numberOfExecutions, methods, objectives) {
     var times = {},
         progress;
 
     moea.method.ga.deactivateLog();
-    algorithms = algorithms || _.keys(moea.problem.knapsack.algorithm.methods);
+    methods = methods || _.keys(moea.problem.knapsack.algorithm.methods);
     objectives = objectives || [2, 3, 4, 5, 6];
-    progress = createProgress(numberOfExecutions, algorithms.length, objectives.length);
+    progress = moea.help.progress.create(numberOfExecutions * methods.length * objectives.length);
 
-    _.forEach(algorithms, function (alg) {
+    _.forEach(methods, function (alg) {
       times[alg] = getTimesForAlgorithm(alg, objectives, numberOfExecutions, progress);
     });
     printTimes(times);

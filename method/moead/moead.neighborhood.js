@@ -23,11 +23,31 @@
     return weights;
   }
 
-  function generateWeightVectors(numberOfObjectives, divisions) {
+  function generateUniformWeightVectors(numberOfObjectives, divisions) {
     var weights = _.filter(generateAllPossibleWeightVectors(numberOfObjectives, divisions), function (w) {
       return _.sum(w) === divisions;
     });
     return _.map(weights, _.partial(_.map, _, _.partial(_.divide, _, divisions)));
+  }
+
+  function getRandomWeightVector(numberOfObjectives) {
+    var rand = _.map(new Array(numberOfObjectives - 1), Math.random);
+    var weights = [];
+    rand.push(0);
+    rand.push(1);
+    rand = _.orderBy(rand);
+    for (let i = 1; i < rand.length; i++) {
+      weights.push(rand[i] - rand[i - 1]);
+    }
+    return weights;
+  }
+
+  function generateRandomWeightVectors(numberOfObjectives, populationSize) {
+    var weightVectors = [];
+    for (let i = 0; i < populationSize; i++) {
+      weightVectors.push(getRandomWeightVector(numberOfObjectives));
+    }
+    return weightVectors;
   }
 
   function createNeighborhoods(population, neighborhoodSize) {
@@ -39,7 +59,8 @@
 
   window.moea = window.moea || {};
   _.set(moea, 'method.moead.neighborhood', {
-    generateWeightVectors: generateWeightVectors,
+    generateUniformWeightVectors: generateUniformWeightVectors,
+    generateRandomWeightVectors: generateRandomWeightVectors,
     createNeighborhoods: createNeighborhoods
   });
 }());
