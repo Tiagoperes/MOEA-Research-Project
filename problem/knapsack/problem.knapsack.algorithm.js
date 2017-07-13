@@ -13,9 +13,11 @@
     nsga: moea.method.nsga.main.execute,
     nsga3: moea.method.nsga3.main.execute,
     spea: moea.method.spea.main.execute,
+    speaSde: moea.method.spea.main.execute,
     moead: moea.method.moead.main.execute,
     moeadd: moea.method.moeadd.main.execute,
     aemmt: moea.method.aemmt.main.execute,
+    aemmtf: moea.method.aemmt.main.execute,
     aemmd: moea.method.aemmd.main.execute
   };
 
@@ -25,8 +27,10 @@
     var config = {
       global: {
         populationSize: 150,
+        archiveSize: 150,
         numberOfGenerations: (instance.items < 100) ? 100 : 200,
         shouldNormalize: false,
+        elementsPerTable: 50,
         randomize: _.partial(mkp.generateRandom, instance),
         objectives: mkp.getObjectives(instance),
         crossover: {rate: 0.5, method: _.partial(mkp.crossover, _, _, instance)},
@@ -37,12 +41,14 @@
         numberOfMeanPoints: 7 // must be (power of 2) - 1
       },
       spea: {
-        archiveSize: 150,
-        shouldNormalize: false,
         shouldUseSDE: false
+      },
+      speaSde: {
+        shouldUseSDE: true
       },
       moead: {
         divisions: MOEAD_DIVISIONS[instance.objectives],
+        isRandomWeights: true,
         comparisons: (instance.items < 100) ? 15000 : 30000,
         neighborhoodSize: 10,
         useTchebycheff: false
@@ -54,12 +60,14 @@
         localReproductionRate: 0.9
       },
       aemmt: {
-        elementsPerTable: 50,
         dominationTableLimit: 150,
         numberOfGenerations: (instance.items < 100) ? 7500 : 15000
       },
+      aemmtf: {
+        dominationTableLimit: Infinity,
+        numberOfGenerations: (instance.items < 100) ? 7500 : 15000
+      },
       aemmd: {
-        elementsPerTable: 50,
         numberOfGenerations: (instance.items < 100) ? 7500 : 15000
       }
     };

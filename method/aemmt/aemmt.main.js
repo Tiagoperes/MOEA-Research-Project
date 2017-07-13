@@ -81,7 +81,8 @@
         evaluationProperty = 'evaluation',
         tables = createTables(settings.objectives),
         populationSize = settings.elementsPerTable * tables.length,
-        population = moea.method.ga.generateRandomPopulation(populationSize, settings.randomize, settings.objectives);
+        population = moea.method.ga.generateRandomPopulation(populationSize, settings.randomize, settings.objectives),
+        ndSet;
 
     if (settings.shouldNormalize) {
       norm.normalize([], population, extremes);
@@ -106,7 +107,8 @@
       moea.method.aemmt.selection.updateTables(tables, children, settings.elementsPerTable, settings.dominationTableLimit, evaluationProperty);
     }
 
-    return _.map(getNonDominatedSetFromTables(tables, evaluationProperty), 'solution');
+    ndSet = settings.dominationTableLimit === Infinity ? _.last(tables).population : getNonDominatedSetFromTables(tables, evaluationProperty);
+    return _.map(ndSet, 'solution');
   }
 
   window.moea = window.moea || {};

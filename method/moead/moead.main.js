@@ -1,9 +1,17 @@
 (function () {
   'use strict';
 
-  function generateCells(divisions, randomize, objectives) {
-    var weightVectors = moea.method.moead.neighborhood.generateWeightVectors(objectives.length, divisions),
-        population = moea.method.ga.generateRandomPopulation(weightVectors.length, randomize, objectives);
+  function generateCells(settings) {
+    var neighborhood = moea.method.moead.neighborhood,
+        weightVectors, population;
+
+    if (settings.isRandomWeights) {
+      weightVectors = neighborhood.generateRandomWeightVectors(settings.objectives.length, settings.populationSize);
+    } else {
+      weightVectors = neighborhood.generateUniformWeightVectors(settings.objectives.length, settings.divisions);
+    }
+
+    population = moea.method.ga.generateRandomPopulation(weightVectors.length, settings.randomize, settings.objectives);
 
     _.forEach(population, function (individual, index) {
       individual.weights = weightVectors[index];
@@ -34,8 +42,8 @@
 
   function moead(settings) {
     var ga = moea.method.ga,
-        cells = generateCells(settings.divisions, settings.randomize, settings.objectives),
-        ngens = ga.getNumberOfGenerations(cells.length, settings.comparisons),
+        cells = generateCells(settings),
+        ngens = settings.isRandomWeights ? settings.numberOfGenerations : ga.getNumberOfGenerations(cells.length, settings.comparisons),
         scalarize = moea.method.moead.scalarization.scalarizeWS,
         archive = [];
 
