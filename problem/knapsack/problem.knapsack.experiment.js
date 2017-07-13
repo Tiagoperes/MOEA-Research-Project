@@ -51,6 +51,6 @@
   }
 
   window.moea = window.moea || {};
-  _.set(moea, 'problem.knapsack.test.run', run);
+  _.set(moea, 'problem.knapsack.experiment.run', run);
 
 }());
