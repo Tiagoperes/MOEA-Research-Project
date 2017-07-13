@@ -3,7 +3,7 @@
 
   function getUpdatedPareto(pareto, newSolutions, objectives) {
     var resultOS = _.map(newSolutions, _.partial(moea.help.pareto.getSolutionInObjectiveSpace, _, objectives)),
-        best = _.concat(pareto, resultOS);
+        best = _.uniqWith(_.concat(pareto, resultOS), _.isEqual);
 
     return moea.help.pareto.getNonDominatedSet(best);
   }
