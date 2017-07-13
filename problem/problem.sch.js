@@ -7,9 +7,9 @@
         MAX = 1000,
         SOLUTION_LENGTH = 11;
 
-  var nsga = moea.nsga.main.execute,
-      spea = moea.spea.main.execute,
-      moead = moea.moead.main.execute;
+  var nsga = moea.method.nsga.main.execute,
+      spea = moea.method.spea.main.execute,
+      moead = moea.method.moead.main.execute;
 
   function solveWithNsga() {
     var solutions = nsga({

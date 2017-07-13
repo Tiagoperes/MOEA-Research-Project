@@ -31,10 +31,6 @@
     return [r3, r4];
   }
 
-  function gaussianMutation(number) {
-    
-  }
-
   window.moea = window.moea || {};
   _.set(moea, 'help.real', {
     generateRandom: generateRandom,

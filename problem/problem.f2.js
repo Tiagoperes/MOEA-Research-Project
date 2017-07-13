@@ -6,8 +6,8 @@
   const MIN = -1000,
         MAX = 1000;
 
-  var nsga = moea.nsga.main.execute,
-      spea = moea.spea.main.execute;
+  var nsga = moea.method.nsga.main.execute,
+      spea = moea.method.spea.main.execute;
 
   function solveWithNsga() {
     var solutions = nsga({
@@ -52,8 +52,8 @@
   function test(testCase) {
     var population = _.map(testCase, function (e) {return [e];});
     var objectives = [f21, f22];
-    var distanceMatrix = moea.spea.distance.calculateDistanceMatrix(population, objectives);
-    moea.spea.fitness.calculate(population, objectives, distanceMatrix);
+    var distanceMatrix = moea.method.spea.distance.calculateDistanceMatrix(population, objectives);
+    moea.method.spea.fitness.calculate(population, objectives, distanceMatrix);
     return _.map(population, _.partial(_.get, _, 'fitness.value'));
   }
 

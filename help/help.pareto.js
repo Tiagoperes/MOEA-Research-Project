@@ -1,5 +1,5 @@
 (function () {
-  'use stict';
+  'use strict';
 
   function dominates(p, q, objectives) {
     if (objectives && objectives instanceof Array) return dominatesObjectives(p, q, objectives);
@@ -46,7 +46,6 @@
   function isDominatedBySet(solution, set, objectives) {
     return _.reduce(set, function (result, s) {
       var d =  dominates(s, solution, objectives);
-      //if (!result && d) console.log(solution + ' dominated by ' + s);
       return result || d;
     }, false);
   }
@@ -101,6 +100,7 @@
     dominates: dominates,
     isDominatedBySet: isDominatedBySet,
     getNonDominatedSet: getNonDominatedSet,
-    updateNonDominatedSet: updateNonDominatedSet
+    updateNonDominatedSet: updateNonDominatedSet,
+    getSolutionInObjectiveSpace: getSolutionInObjectiveSpace
   });
 }());
