@@ -36,36 +36,12 @@
       return str;
     };
 
-    report.toExcel = function () {
-      var str = '';
-
-      _.forEach(executions[0], function (value, key) {
-        str += '\t' + key;
-      });
-
-      _.forEach(executions, function (e, index) {
-        str += '\nexec ' + (index + 1);
-        _.forEach(e, function (value) {
-          str += '\t' + value.toFixed(2);
-        });
-      });
-
-      return str;
-    };
-
     return report;
   }
 
-  function getObjectiveArray(solution) {
-    return _.map(solution, function (value, index) {
-      return _.partial(_.get, _, index);
-    });
-  }
-
   function getErrorRate(solutions, pareto) {
-    var objectives = getObjectiveArray(solutions[0]);
     var sum =  _.sumBy(solutions, function (s) {
-      return moea.help.pareto.isDominatedBySet(s, pareto, objectives) ? 1 : 0;
+      return moea.help.pareto.isDominatedBySet(s, pareto) ? 1 : 0;
     });
     return sum / solutions.length;
   }

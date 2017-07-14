@@ -47,6 +47,7 @@
     _.forEach(methods, function (alg) {
       times[alg] = getTimesForAlgorithm(alg, objectives, numberOfExecutions, progress);
     });
+
     printTimes(times);
     return times;
   }
