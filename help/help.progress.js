@@ -17,8 +17,9 @@
     }
 
     return {
-      next: function () {
-        percent += step;
+      next: function (numberOfSteps) {
+        if (numberOfSteps === undefined) numberOfSteps = 1;
+        percent += numberOfSteps * step;
         log();
       },
       reset: function () {

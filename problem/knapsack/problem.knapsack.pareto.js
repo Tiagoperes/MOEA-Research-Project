@@ -35,10 +35,10 @@
     return 'kp-pareto-' + instance.objectives + '-' + instance.items;
   }
 
-  function loadPareto(instance, reset) {
+  function loadPareto(instance, shouldReset) {
     var lsData;
 
-    if (reset) {
+    if (shouldReset) {
       delete localStorage[getDBName(instance)];
       return instance.pareto;
     }
@@ -87,11 +87,11 @@
     return newPareto;
   }
 
-  function updatePareto(numberOfObjectives, numberOfItems, numberOfExecutions, methods, reset) {
+  function updatePareto(numberOfObjectives, numberOfItems, numberOfExecutions, methods, shouldReset) {
     var mkp = moea.problem.knapsack.main,
         instance = mkp.getInstance(numberOfObjectives, numberOfItems),
         objectives = mkp.getObjectives(instance),
-        pareto = loadPareto(instance, reset),
+        pareto = loadPareto(instance, shouldReset),
         progress;
 
     methods = methods || _.keys(moea.problem.knapsack.algorithm.methods);

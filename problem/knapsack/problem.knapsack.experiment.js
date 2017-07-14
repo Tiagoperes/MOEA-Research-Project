@@ -1,11 +1,11 @@
 (function () {
   'use strict';
 
-  function createDatabase(method, numberOfObjectives, numberOfItems, reset) {
+  function createDatabase(method, numberOfObjectives, numberOfItems, shouldReset) {
     var name = 'kp-res-' + numberOfObjectives + '-' + numberOfItems + '-' + method,
         array;
 
-    if (!localStorage[name] || reset) {
+    if (!localStorage[name] || shouldReset) {
       localStorage[name] = '[]';
     }
 
@@ -33,16 +33,19 @@
     document.body.innerHTML = '<pre>' + JSON.stringify(report).replace(/"er":(\d+\.?\d*),"gd":(\d+\.?\d*),"ps":(\d+\.?\d*),"pcr":\d+\.?\d*,"sp":\d+\.?\d*,"fsp":(\d+\.?\d*),"ms":(\d+\.?\d*),"hv":(\d+\.?\d*)/g, '$1\t$2\t$3\t$4\t$5\t$6').replace(/(\d+)\.(\d+)/g,'$1,$2').replace(/[\{\}]/g, '').replace(/,"sd":/g, '\n"sd":') + '</pre>';
   }
 
-  function run(method, numberOfObjectives, numberOfItems, numberOfExecutions, reset) {
-    var metrics = createDatabase(method, numberOfObjectives, numberOfItems, reset),
+  function run(method, numberOfObjectives, numberOfItems, numberOfExecutions, shouldReset) {
+    var metrics = createDatabase(method, numberOfObjectives, numberOfItems, shouldReset),
         instance = moea.problem.knapsack.main.getInstance(numberOfObjectives, numberOfItems),
-        numberOfRuns = numberOfExecutions - metrics.length,
+        progress = moea.help.progress.create(numberOfExecutions),
         report;
 
-    for (let i = 0; i < numberOfRuns; i++) {
-      console.log('\nEXECUTION ' + (i + 1) + '\n---------------------');
+    if (numberOfExecutions > 1) moea.method.ga.deactivateLog();
+    progress.next(metrics.length);
+
+    while (!progress.isComplete()) {
       let result = getMetricsForMethod(method, instance);
       metrics.push(result);
+      progress.next();
     }
 
     report = moea.help.report.createReport(metrics);
