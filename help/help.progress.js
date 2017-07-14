@@ -2,8 +2,15 @@
   'use strict';
 
   function createProgress(numberOfSteps) {
-    var percent = 0,
-        step = 100 / numberOfSteps;
+    var percent, step;
+    
+    if (numberOfSteps === 0) {
+      percent = 100;
+      step = 0;
+    } else {
+      percent = 0;
+      step = 100 / numberOfSteps;
+    }
 
     function log() {
       console.log(Math.floor(percent) + '%');
