@@ -1,6 +1,8 @@
 (function () {
   'use strict';
 
+  const SHOULD_IGNORE_NEW_SOLUTIONS = false;
+
   function createReport(executions) {
     var report = {
       mean: {
@@ -40,9 +42,16 @@
   }
 
   function getErrorRate(solutions, pareto) {
+    var newSolutions = [];
     var sum =  _.sumBy(solutions, function (s) {
-      return moea.help.pareto.isDominatedBySet(s, pareto) ? 1 : 0;
+      var isDominated = moea.help.pareto.isDominatedBySet(s, pareto);
+      if (isDominated) return 1;
+      if (!SHOULD_IGNORE_NEW_SOLUTIONS && !_.find(pareto, _.partial(_.isEqual, s))) {
+        newSolutions.push(s);
+      }
+      return 0;
     });
+    if (newSolutions.length) throw new moea.help.pareto.IncompleteParetoException(newSolutions);
     return sum / solutions.length;
   }
 

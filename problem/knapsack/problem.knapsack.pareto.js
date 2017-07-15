@@ -1,10 +1,8 @@
 (function () {
   'use strict';
 
-  function getUpdatedPareto(pareto, newSolutions, objectives) {
-    var resultOS = _.map(newSolutions, _.partial(moea.help.pareto.getSolutionInObjectiveSpace, _, objectives)),
-        best = _.uniqWith(_.concat(pareto, resultOS), _.isEqual);
-
+  function getUpdatedPareto(currentPareto, newParetoSolutions) {
+    var best = _.uniqWith(_.concat(currentPareto, newParetoSolutions), _.isEqual);
     return moea.help.pareto.getNonDominatedSet(best);
   }
 
@@ -51,6 +49,10 @@
     localStorage[getDBName(instance)] = JSON.stringify(pareto);
   }
 
+  function erasePareto(instance) {
+    delete localStorage[getDBName(instance)];
+  }
+
   function getCombinedSolutions(methods, instance, progress) {
     var result = [];
 
@@ -65,7 +67,7 @@
   function logResults(instance, newPareto) {
     var differences = getDifferencesBetweenParetos(instance.pareto, newPareto);
 
-    if (differences.added || differences.removed) {
+    if (differences.added) {
       console.log('New solutions found. Pareto has changed.');
       logDifferences(instance.pareto, newPareto, differences);
       printPareto(newPareto);
@@ -74,11 +76,11 @@
     }
   }
 
-  function updateParetoWithSolutions(pareto, solutions, instance, objectives, progress) {
-    var newPareto = getUpdatedPareto(pareto, solutions, objectives),
+  function updateParetoWithNewSolutions(pareto, newParetoSolutions, instance, progress) {
+    var newPareto = getUpdatedPareto(pareto, newParetoSolutions),
         differences = getDifferencesBetweenParetos(pareto, newPareto);
 
-    if (differences.added || differences.removed) {
+    if (differences.added) {
       console.log('The pareto set has been modified. Restarting...');
       progress.reset();
       savePareto(newPareto, instance);
@@ -101,14 +103,35 @@
 
     while (!progress.isComplete()) {
         let solutions = getCombinedSolutions(methods, instance, progress);
-        pareto = updateParetoWithSolutions(pareto, solutions, instance, objectives, progress);
+        let newParetoSolutions = _.map(solutions, _.partial(moea.help.pareto.getSolutionInObjectiveSpace, _, objectives));
+        pareto = updateParetoWithNewSolutions(pareto, newParetoSolutions, instance, progress);
     }
 
     logResults(instance, pareto);
     return pareto;
   }
 
+  function saveToParetoDB(pareto, instance) {
+    var current = loadPareto(instance);
+    savePareto(getUpdatedPareto(current, pareto), instance);
+  }
+
+  function loadUnsavedPareto(instance) {
+    var dbPareto = loadPareto(instance),
+        diffs;
+
+    if (dbPareto === instance.pareto) return null;
+    diffs = getDifferencesBetweenParetos(instance.pareto, dbPareto);
+    if (diffs.added) return dbPareto;
+    erasePareto(instance);
+    return null;
+  }
+
   window.moea = window.moea || {};
-  _.set(moea, 'problem.knapsack.pareto.update', updatePareto);
+  _.set(moea, 'problem.knapsack.pareto', {
+    update: updatePareto,
+    saveToParetoDB: saveToParetoDB,
+    loadUnsavedPareto: loadUnsavedPareto
+  });
 
 }());

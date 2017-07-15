@@ -95,12 +95,44 @@
     return newSolutions;
   }
 
+  function ParetoException(message) {
+    this.name = 'ParetoException';
+    this.message = message;
+  }
+
+  function IncompleteParetoException(solutions) {
+    this.solutions = solutions;
+    this.name = 'IncompleteParetoException';
+    this.message = 'IncompleteParetoException: ' + solutions.length + ' solutions found. It is advised to update the Pareto and restart the experiments.';
+  }
+
+  function UnsavedParetoException(instanceId, paretoToSave) {
+    this.name = 'UnsavedParetoException';
+    this.instance = instanceId;
+    this.pareto = paretoToSave;
+    this.message = 'There are unsaved changes to the Pareto corresponding to this problem instance. Please, save the Pareto and try again.';
+  }
+
+  ParetoException.prototype = Object.create(Error.prototype);
+  ParetoException.prototype.name = 'ParetoException';
+  ParetoException.prototype.constructor = ParetoException;
+  IncompleteParetoException.prototype = Object.create(ParetoException.prototype);
+  IncompleteParetoException.prototype.name = 'IncompleteParetoException';
+  IncompleteParetoException.prototype.constructor = IncompleteParetoException;
+  UnsavedParetoException.prototype = Object.create(ParetoException.prototype);
+  UnsavedParetoException.prototype.name = 'UnsavedParetoException';
+  UnsavedParetoException.prototype.constructor = UnsavedParetoException;
+
+
   window.moea = window.moea || {};
   _.set(moea, 'help.pareto', {
     dominates: dominates,
     isDominatedBySet: isDominatedBySet,
     getNonDominatedSet: getNonDominatedSet,
     updateNonDominatedSet: updateNonDominatedSet,
-    getSolutionInObjectiveSpace: getSolutionInObjectiveSpace
+    getSolutionInObjectiveSpace: getSolutionInObjectiveSpace,
+    ParetoException: ParetoException,
+    IncompleteParetoException: IncompleteParetoException,
+    UnsavedParetoException: UnsavedParetoException
   });
 }());
