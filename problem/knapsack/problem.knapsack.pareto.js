@@ -2,8 +2,9 @@
   'use strict';
 
   function getUpdatedPareto(currentPareto, newParetoSolutions) {
-    var best = _.uniqWith(_.concat(currentPareto, newParetoSolutions), _.isEqual);
-    return moea.help.pareto.getNonDominatedSet(best);
+    return _.reduce(newParetoSolutions, function (pareto, s) {
+      return moea.help.pareto.updateNonDominatedSet(pareto, s);
+    }, currentPareto);
   }
 
   function getDifferencesBetweenParetos(currentPareto, newPareto) {
@@ -65,22 +66,20 @@
   }
 
   function logResults(instance, newPareto) {
-    var differences = getDifferencesBetweenParetos(instance.pareto, newPareto);
-
-    if (differences.added) {
+    if (instance.pareto === newPareto) {
+      console.log('No new solution was found. Pareto has not changed.');
+    } else {
+      let differences = getDifferencesBetweenParetos(instance.pareto, newPareto);
       console.log('New solutions found. Pareto has changed.');
       logDifferences(instance.pareto, newPareto, differences);
       printPareto(newPareto);
-    } else {
-      console.log('No new solution was found. Pareto has not changed.');
     }
   }
 
   function updateParetoWithNewSolutions(pareto, newParetoSolutions, instance, progress) {
-    var newPareto = getUpdatedPareto(pareto, newParetoSolutions),
-        differences = getDifferencesBetweenParetos(pareto, newPareto);
+    var newPareto = getUpdatedPareto(pareto, newParetoSolutions);
 
-    if (differences.added) {
+    if (pareto !== newPareto) {
       console.log('The pareto set has been modified. Restarting...');
       progress.reset();
       savePareto(newPareto, instance);
@@ -111,9 +110,9 @@
     return pareto;
   }
 
-  function saveToParetoDB(pareto, instance) {
+  function saveToParetoDB(solutions, instance) {
     var current = loadPareto(instance);
-    savePareto(getUpdatedPareto(current, pareto), instance);
+    savePareto(getUpdatedPareto(current, solutions), instance);
   }
 
   function loadUnsavedPareto(instance) {

@@ -29,11 +29,6 @@
     return moea.help.report.getMetrics(uniqueInOS, instance.pareto, worst);
   }
 
-  function updateParetoWithNewSolutions(instance, solutions) {
-    instance.pareto = moea.help.pareto.getNonDominatedSet(_.concat(instance.pareto, solutions));
-    moea.problem.knapsack.pareto.saveToParetoDB(instance.pareto, instance);
-  }
-
   function updateMetricsWithOnMoreRun(metrics, method, instance, progress) {
     try {
       metrics.push(getMetricsForMethod(method, instance));
@@ -42,7 +37,7 @@
     } catch (error) {
       if (error instanceof moea.help.pareto.IncompleteParetoException) {
         console.log(error.solutions.length + ' new solutions found. Updating Pareto and restarting experiment.');
-        updateParetoWithNewSolutions(instance, error.solutions);
+        moea.problem.knapsack.pareto.saveToParetoDB(instance, error.solutions);
         progress.reset();
         return createDatabase(method, instance.objectives, instance.items, true);
       }

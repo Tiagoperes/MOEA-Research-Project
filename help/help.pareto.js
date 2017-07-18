@@ -44,20 +44,14 @@
   }
 
   function isDominatedBySet(solution, set, objectives) {
-    return _.reduce(set, function (result, s) {
-      var d =  dominates(s, solution, objectives);
-      return result || d;
-    }, false);
+    for (let i = 0; i < set.length; i++) {
+      if (dominates(set[i], solution, objectives)) return true;
+    }
   }
 
   function getNonDominatedSet(solutions, objectives) {
     return _.filter(solutions, function (s) {
-      for (let i = 0; i < solutions.length; i++) {
-        if (dominates(solutions[i], s, objectives)) {
-          return false;
-        }
-      }
-      return true;
+      return !isDominatedBySet(s, solutions, objectives);
     });
   }
 

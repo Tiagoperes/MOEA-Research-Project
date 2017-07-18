@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const SHOULD_IGNORE_NEW_SOLUTIONS = false;
+  const SHOULD_IGNORE_NEW_SOLUTIONS = true;
 
   function createReport(executions) {
     var report = {
