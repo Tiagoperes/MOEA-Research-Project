@@ -83,7 +83,41 @@
     return report;
   }
 
+  function getFormattedResults(type, objectives, items, methods, properties, shouldPrintNames) {
+    var str = '';
+
+    type = type || 'mean';
+    objectives = objectives || [2, 3, 4, 5, 6];
+    items = items || [30, 50, 100];
+    methods = methods || ['nsga', 'nsga3', 'spea', 'moead', 'aemmt', 'aemmtf'];
+    properties = properties || ['er', 'gd', 'ps', 'fsp', 'ms', 'hv'];
+
+    _.forEach(items, function (item) {
+      if (shouldPrintNames) str += '------------------------------------\n' + item + ' items\n';
+      _.forEach(objectives, function (objective) {
+        if (shouldPrintNames) str += '------------------------------------\n' + objective + ' objectives\n';
+        _.forEach(methods, function (method) {
+          if (shouldPrintNames) str += method + '\n';
+          let methodDBName = 'kp-res-' + objective + '-' + item + '-' + method;
+          if (localStorage[methodDBName]) {
+            let report = moea.help.report.createReport(JSON.parse(localStorage[methodDBName]));
+            _.forEach(properties, function (property) {
+              if (shouldPrintNames) str += property + ': ';
+              str += (report[type][property] + '\t').replace('.', ',');
+            });
+          }
+          str+='\n';
+        });
+      });
+    });
+
+    return str;
+  }
+
   window.moea = window.moea || {};
-  _.set(moea, 'problem.knapsack.experiment.run', run);
+  _.set(moea, 'problem.knapsack.experiment', {
+    run: run,
+    getFormattedResults: getFormattedResults
+  });
 
 }());
