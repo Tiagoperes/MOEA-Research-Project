@@ -40,15 +40,15 @@
     }, []);
   }
 
-  // fixme: sometimes, the solution will still be invalid after going through this process, dunno why
   function makeValid(solution, instance) {
     var weight = getWeight(solution, instance);
     var indexesWithTrue = getIndexesWithTrue(solution);
     while (USE_SOLUTION_VALIDATION && weight > instance.capacity) {
-      let objectToRemove = _.sample(indexesWithTrue);
-      solution[objectToRemove] = false;
-      indexesWithTrue.splice(objectToRemove, 1);
-      weight -= instance.weights[objectToRemove];
+      let rand = _.random(indexesWithTrue.length - 1);
+      let itemToRemove = indexesWithTrue[rand];
+      solution[itemToRemove] = false;
+      indexesWithTrue.splice(rand, 1);
+      weight -= instance.weights[itemToRemove];
     }
   }
 
@@ -58,9 +58,6 @@
       individual[i] = !!_.random(0, 1);
     }
     makeValid(individual, instance);
-    //if (getWeight(individual) > instance.capacity) {
-    //  debugger;
-    //}
     return individual;
   }
 

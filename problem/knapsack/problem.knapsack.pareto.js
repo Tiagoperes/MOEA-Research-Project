@@ -43,11 +43,16 @@
     }
 
     lsData = localStorage[getDBName(instance)];
-    return lsData ? JSON.parse(lsData) : instance.pareto;
+    return lsData ? JSON.parse(LZString.decompress(lsData)) : instance.pareto;
   }
 
   function savePareto(pareto, instance) {
-    localStorage[getDBName(instance)] = JSON.stringify(pareto);
+    try {
+      localStorage[getDBName(instance)] = LZString.compress(JSON.stringify(pareto));
+    } catch (err) {
+      console.log(pareto);
+      throw err;
+    }
   }
 
   function erasePareto(instance) {
