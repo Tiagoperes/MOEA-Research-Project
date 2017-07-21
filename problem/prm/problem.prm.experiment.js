@@ -1,403 +1,108 @@
 (function () {
   'use strict';
 
-  const DISCONNECTION_RATE = 0.1,
-        DATA_FLOW = 300;
-
-  var nsga = moea.method.nsga.main.execute,
-      spea = moea.method.spea.main.execute,
-      moead = moea.method.moead.main.execute,
-      aemmt = moea.method.aemmt.main.execute,
-      aemmd = moea.method.aemmd.main.execute;
-
-  var graph, weights, costs, root, destinations, dmax, problems, worst, objectives;
-
-  function setPrmInstance(instance, problem) {
-    graph = instance.graph;
-    weights = instance.weights;
-    root = instance.root;
-    destinations = instance.destinations;
-    dmax = instance.dmax;
-    objectives = problems[problem - 1];
-    worst = _.fill(new Array(objectives.length), -Infinity);
-
-    costs = _.map(weights, function (weightList) {
-      return _.map(weightList, 'cost');
-    });
+  function createDatabase(method, network, problem, shouldReset) {
+    var name = 'prm-exp-rede' + network + '-p' + problem + '-' + method;
+    return moea.help.database.create(name, shouldReset);
   }
 
+  function getMetricsForMethod(method, instance) {
+    var solutions = moea.problem.prm.algorithm.run(method, instance),
+        objectives = moea.problem.prm.main.getObjectives(instance.problem),
+        worst = _.fill(new Array(objectives.length), 0),
+        uniqueInOS = _.map(solutions, _.partial(moea.help.pareto.getSolutionInObjectiveSpace, _, objectives));
 
-  function getTreesInObjectiveSpace(trees) {
-    return _.map(trees, function (tree) {
-      return _.map(objectives, function(objective) {
-        return objective(tree);
-      });
-    })
+    return moea.help.report.getMetrics(uniqueInOS, instance.pareto, worst);
   }
 
-  function filter(population) {
-    var size = population.length;
-    var filtered = _.uniqWith(population, function (a, b) {
-      var values = getTreesInObjectiveSpace([a, b]);
-      return _.isEqual(values[0], values[1]);
-    });
-    while (filtered.length < size) {
-      filtered.push(moea.help.tree.randomize.generateRandom(graph, root, destinations));
-    }
-    return filtered;
-  }
-
-  function solveWithNsga(network, problem) {
-    setPrmInstance(moea.problem.prm.instances['rede' + network], problem);
-
-    return nsga({
-      populationSize: 60,
-      randomize: _.partial(moea.help.tree.randomize.generateRandom, graph, root, destinations),
-      objectives: objectives,
-      //filter: _.partial(filter),
-      numberOfGenerations: 100,
-      crossover: {rate: 1, method: _.partial(moea.help.tree.dijkstraGa.crossover, _, _, graph, costs, root, destinations)},
-      mutation: {rate: 0.2, method: _.partial(moea.help.tree.dijkstraGa.mutate, _, graph, root, destinations, DISCONNECTION_RATE)}
-    });
-  }
-
-  function solveWithSpea(network, problem) {
-    setPrmInstance(moea.problem.prm.instances['rede' + network]);
-
-    return spea({
-      populationSize: 60,
-      archiveSize: 60,
-      randomize: _.partial(moea.help.tree.randomize.generateRandom, graph, root, destinations),
-      objectives: objectives,
-      numberOfGenerations: 100,
-      crossover: {rate: 1, method: _.partial(moea.help.tree.dijkstraGa.crossover, _, _, graph, costs, root, destinations)},
-      mutation: {rate: 0.2, method: _.partial(moea.help.tree.dijkstraGa.mutate, _, graph, root, destinations, DISCONNECTION_RATE)}
-    });
-  }
-
-  function solveWithMoead(network, problem) {
-    setPrmInstance(moea.problem.prm.instances['rede' + network], problem);
-
-    return moead({
-      populationSize: 60,
-      neighborhoodSize: 8,
-      randomize: _.partial(moea.help.tree.randomize.generateRandom, graph, root, destinations),
-      objectives: objectives,
-      numberOfGenerations: 100,
-      crossover: {method: _.partial(moea.help.tree.dijkstraGa.crossover, _, _, graph, costs, root, destinations)},
-      mutation: {rate: 0.2, method: _.partial(moea.help.tree.dijkstraGa.mutate, _, graph, root, destinations, DISCONNECTION_RATE)}
-    });
-  }
-
-  function solveWithAemmt(network, problem) {
-    setPrmInstance(moea.problem.prm.instances['rede' + network], problem);
-
-    return aemmt({
-      elementsPerTable: 50,
-      dominationTableLimit: 150,
-      randomize: _.partial(moea.help.tree.randomize.generateRandom, graph, root, destinations),
-      objectives: objectives,
-      numberOfGenerations: 10000,
-      crossover: {method: _.partial(moea.help.tree.dijkstraGa.crossover, _, _, graph, costs, root, destinations)},
-      mutation: {rate: 0.2, method: _.partial(moea.help.tree.dijkstraGa.mutate, _, graph, root, destinations, DISCONNECTION_RATE)}
-    });
-  }
-
-  function solveWithAemmd(network, problem) {
-    setPrmInstance(moea.problem.prm.instances['rede' + network], problem);
-
-    return aemmd({
-      elementsPerTable: 50,
-      randomize: _.partial(moea.help.tree.randomize.generateRandom, graph, root, destinations),
-      objectives: objectives,
-      numberOfGenerations: 10000,
-      crossover: {method: _.partial(moea.help.tree.dijkstraGa.crossover, _, _, graph, costs, root, destinations)},
-      mutation: {rate: 0.2, method: _.partial(moea.help.tree.dijkstraGa.mutate, _, graph, root, destinations, DISCONNECTION_RATE)}
-    });
-  }
-
-  function getParetoSet(network, problem) {
-    return moea.problem.prm.paretos[network][problem];
-  }
-
-  function test(algorithm, network, problem, numberOfExecutions) {
-    var executions = [];
-    var pareto;
-
-    network = network || 0;
-    problem = problem || 1;
-    numberOfExecutions = numberOfExecutions || 1;
-
-    pareto = getParetoSet(network, problem - 1);
-
-    for (let i = 0; i < numberOfExecutions; i++) {
-      console.log('\nEXECUTION ' + (i + 1));
-      console.log('---------------------');
-      var solutions = algorithm(network, problem);
-      var solutionsValues = getTreesInObjectiveSpace(solutions);
-      var uniqS = _.uniqWith(solutionsValues, _.isEqual);
-      console.log('Pareto:');
-      console.log(JSON.stringify(pareto));
-      console.log('Solutions:');
-      console.log(JSON.stringify(uniqS));
-      console.log('Worst:');
-      console.log(worst);
-      var metrics = moea.help.report.getMetrics(uniqS, pareto, worst);
-      executions.push(metrics);
-    }
-
-    var ans = moea.help.report.createReport(executions);
-    document.body.innerHTML = '<pre>' + JSON.stringify(ans).replace(/"er":(\d+\.?\d*),"gd":(\d+\.?\d*),"ps":(\d+\.?\d*),"pcr":\d+\.?\d*,"sp":\d+\.?\d*,"fsp":(\d+\.?\d*),"ms":(\d+\.?\d*),"hv":(\d+\.?\d*)/g, '$1\t$2\t$3\t$4\t$5\t$6').replace(/(\d+)\.(\d+)/g,'$1,$2').replace(/[\{\}]/g, '').replace(/,"sd":/g, '\n"sd":') + '</pre>';
-    return ans;
-  }
-
-  function isValidTree(tree) {
-    var visited = _.fill(new Array(tree.length), false),
-        explore = [root];
-
-    while (explore.length) {
-      let node = explore.shift();
-      if (visited[node]) {
-        invalid++;
-        return false;
+  function updateMetricsWithOneMoreRun(metrics, method, instance, progress) {
+    try {
+      metrics.push(getMetricsForMethod(method, instance));
+      progress.next();
+      return metrics;
+    } catch (error) {
+      if (error instanceof moea.help.pareto.IncompleteParetoException) {
+        console.log(error.solutions.length + ' new solutions found. Updating Pareto and restarting experiment.');
+        moea.problem.prm.pareto.saveToParetoDB(instance, error.solutions);
+        progress.reset();
+        return createDatabase(method, instance.network.name, instance.problem, true);
       }
-      visited[node] = true;
-      _.pushAll(explore, tree[node]);
+      throw error;
     }
-
-    total++;
-    return true;
   }
 
-  function getWeightSum(tree, property) {
-    var explore = [root];
-    var sum = 0;
+  function verifyUnsavedPareto(instance, shouldRaiseException) {
+    var unsavedPareto = moea.problem.prm.pareto.loadUnsavedPareto(instance);
 
-    if (!isValidTree(tree)) {
-      return Infinity;
+    if (!unsavedPareto) return;
+
+    if (shouldRaiseException) {
+      throw new moea.help.pareto.UnsavedParetoException(unsavedPareto);
     }
 
-    while (explore.length) {
-      let node = explore.shift();
-      _.forEach(tree[node], function (child) {
-        explore.push(child);
-        sum += weights[node][child][property];
+    console.log('Attention: there are updated values to the Pareto available. Updated Pareto is as follows:');
+    console.log(unsavedPareto);
+  }
+
+  function printReport(report) {
+    document.body.innerHTML = '<pre>' + JSON.stringify(report).replace(/"er":(\d+\.?\d*),"gd":(\d+\.?\d*),"ps":(\d+\.?\d*),"pcr":\d+\.?\d*,"sp":\d+\.?\d*,"fsp":(\d+\.?\d*),"ms":(\d+\.?\d*),"hv":(\d+\.?\d*)/g, '$1\t$2\t$3\t$4\t$5\t$6').replace(/(\d+)\.(\d+)/g,'$1,$2').replace(/[\{\}]/g, '').replace(/,"sd":/g, '\n"sd":') + '</pre>';
+  }
+
+  function run(method, numberOfObjectives, numberOfItems, numberOfExecutions, shouldReset) {
+    var metrics = createDatabase(method, numberOfObjectives, numberOfItems, shouldReset),
+        instance = moea.problem.prm.main.getInstance(numberOfObjectives, numberOfItems),
+        progress = moea.help.progress.create(numberOfExecutions),
+        report;
+
+    verifyUnsavedPareto(instance, true);
+    if (numberOfExecutions > 1) moea.method.ga.deactivateLog();
+    progress.next(metrics.length);
+
+    while (!progress.isComplete()) {
+      metrics = updateMetricsWithOneMoreRun(metrics, method, instance, progress);
+    }
+
+    report = moea.help.report.createReport(metrics);
+    printReport(report);
+    verifyUnsavedPareto(instance, false);
+    return report;
+  }
+
+  function getFormattedResults(type, objectives, items, methods, properties, shouldPrintNames) {
+    var str = '';
+
+    type = type || 'mean';
+    objectives = objectives || [2, 3, 4, 5, 6];
+    items = items || [30, 50, 100];
+    methods = methods || ['nsga', 'nsga3', 'spea', 'moead', 'aemmt', 'aemmtf'];
+    properties = properties || ['er', 'gd', 'ps', 'fsp', 'ms', 'hv'];
+
+    _.forEach(items, function (item) {
+      if (shouldPrintNames) str += '------------------------------------\n' + item + ' items\n';
+      _.forEach(objectives, function (objective) {
+        if (shouldPrintNames) str += '------------------------------------\n' + objective + ' objectives\n';
+        _.forEach(methods, function (method) {
+          if (shouldPrintNames) str += method + '\n';
+          let methodDBName = 'kp-res-' + objective + '-' + item + '-' + method;
+          if (localStorage[methodDBName]) {
+            let report = moea.help.report.createReport(JSON.parse(localStorage[methodDBName]));
+            _.forEach(properties, function (property) {
+              if (shouldPrintNames) str += property + ': ';
+              str += (report[type][property] + '\t').replace('.', ',');
+            });
+          }
+          str+='\n';
+        });
       });
-    }
-
-    return sum;
-  }
-
-  function getEndToEndDelay(tree, source, target, delay) {
-    var i = 0, result;
-
-    if (source === target) {
-      return delay;
-    }
-
-    while (!result && i < tree[source].length) {
-      let child = tree[source][i];
-      result = getEndToEndDelay(tree, child, target, delay + weights[source][child].delay);
-      i++;
-    }
-
-    return result;
-  }
-
-  function updateWorst(objective, value) {
-    var index = _.indexOf(objectives, objective);
-    if (value !== Infinity && value > worst[index]) {
-      worst[index] = value;
-    }
-  }
-
-  function getTreeCost(tree) {
-    var cost = getWeightSum(tree, 'cost');
-    updateWorst(getTreeCost, cost);
-    return cost;
-  }
-
-  function getTreeE2EDelay(tree) {
-    var delay;
-
-    if (!isValidTree(tree)) {
-      return Infinity;
-    }
-
-    delay = - _.reduce(destinations, function (sum, node) {
-      var e2e = getEndToEndDelay(tree, root, node, 0);
-      return sum + (e2e <= dmax ? 1 : 0);
-    }, 0);
-
-    updateWorst(getTreeE2EDelay, delay);
-    return delay;
-  }
-
-  function getTotalDelay(tree) {
-    var delay = getWeightSum(tree, 'delay');
-    updateWorst(getTotalDelay, delay);
-    return delay;
-  }
-
-  function getMedianDelay(tree) {
-    var total, delay;
-
-    if (!isValidTree(tree)) {
-      return Infinity;
-    }
-
-    total = _.sumBy(destinations, function (node) {
-      return getEndToEndDelay(tree, root, node, 0);
     });
 
-    delay = total / destinations.length;
-    updateWorst(getMedianDelay, delay);
-    return delay;
-  }
-
-  function getMaxDelay(tree) {
-    var delay;
-
-    if (!isValidTree(tree)) {
-      return Infinity;
-    }
-
-    delay = _.reduce(destinations, function (max, node) {
-      var d = getEndToEndDelay(tree, root, node, 0);
-      return d > max ? d : max;
-    }, 0);
-
-    updateWorst(getMaxDelay, delay);
-    return delay;
-  }
-
-  function getHopsCount(tree) {
-    var hops;
-
-    if (!isValidTree(tree)) {
-      return Infinity;
-    }
-
-    hops = _.sumBy(tree, 'length');
-    updateWorst(getHopsCount, hops);
-    return hops;
-  }
-
-  function getLinkUsage(v1, v2) {
-    var w;
-
-    w = weights[v1][v2];
-    return (w.traffic + DATA_FLOW) / w.capacity;
-  }
-
-  function getMaxLinkUsage(tree) {
-    var max = 0;
-
-    if (!isValidTree(tree)) {
-      return Infinity;
-    }
-
-    for (let i = 0; i < tree.length; i++) {
-      _.forEach(tree[i], function (edge) {
-        var usage = getLinkUsage(i, edge);
-        if (usage > max) {
-          max = usage;
-        }
-      });
-    }
-
-    updateWorst(getMaxLinkUsage, max);
-    return max;
-  }
-
-  function getMedianLinkUsage(tree) {
-    var sum = 0,
-        numberOfEdges = 0,
-        median;
-
-    if (!isValidTree(tree)) {
-      return Infinity;
-    }
-
-    for (let i = 0; i < tree.length; i++) {
-      _.forEach(tree[i], function (edge) {
-        sum += getLinkUsage(i, edge);
-        numberOfEdges++;
-      });
-    }
-
-    median = sum / numberOfEdges;
-    updateWorst(getMedianLinkUsage, median);
-    return median;
-  }
-
-  problems = [
-    [getTreeCost, getTreeE2EDelay],
-    [getTreeCost, getTotalDelay],
-    [getTreeCost, getMedianDelay],
-    [getTreeCost, getMaxDelay],
-    [getTreeCost, getHopsCount],
-    [getMaxLinkUsage, getTreeCost, getMaxDelay, getHopsCount],
-    [getMedianLinkUsage, getMaxLinkUsage, getTreeCost, getMaxDelay, getHopsCount],
-    [getMedianLinkUsage, getMaxLinkUsage, getTreeCost, getMaxDelay, getHopsCount, getMedianDelay]
-  ];
-
-  window.invalid = 0;
-  window.total = 0;
-
-  function testObjectives() {
-    var t = [
-      [1, 2],
-      [3],
-      [4],
-      [5,6],
-      [],
-      [],
-      [7],
-      []
-    ];
-
-    var w = [
-      [null, {cost: 2, delay: 1, capacity: 40, traffic: 10}, {cost: 3, delay: 2, capacity: 25, traffic: 15}, null, null, null, null, null],
-      [null, null, null, {cost: 5, delay: 3, capacity: 23, traffic: 17}, null, null, null, null],
-      [null, null, null, null, {cost: 2, delay: 2, capacity: 31, traffic: 13}, null, null, null],
-      [null, null, null, null, null, {cost: 7, delay: 5, capacity: 71, traffic: 26}, {cost: 3, delay: 3, capacity: 49, traffic: 29}, null],
-      [null, null, null, null, null, null, null, null],
-      [null, null, null, null, null, null, null, null],
-      [null, null, null, null, null, null, null, {cost: 2, delay: 1, capacity: 50, traffic: 15}],
-      [null, null, null, null, null, null, null, null]
-    ];
-
-    setPrmInstance({
-      weights: w,
-      root: 0,
-      destinations: [4,5,7],
-      dmax: 8
-    });
-
-    console.log('cost: ' + getTreeCost(t));
-    console.log('delay faf atendido: ' + getTreeE2EDelay(t));
-    console.log('delay total: ' + getTotalDelay(t));
-    console.log('delay faf médio: ' + getMedianDelay(t));
-    console.log('delay faf max: ' + getMaxDelay(t));
-    console.log('hops count: ' + getHopsCount(t));
-    console.log('max enlaces: ' + getMaxLinkUsage(t));
-    console.log('média enlaces: ' + getMedianLinkUsage(t));
+    return str;
   }
 
   window.moea = window.moea || {};
-  _.set(moea, 'problem.prm', {
-    solveWithNsga: solveWithNsga,
-    solveWithSpea: solveWithSpea,
-    solveWithMoead: solveWithMoead,
-    solveWithAemmt: solveWithAemmt,
-    solveWithAemmd: solveWithAemmd,
-    testWithNsga: _.partial(test, solveWithNsga),
-    testWithSpea: _.partial(test, solveWithSpea),
-    testWithMoead: _.partial(test, solveWithMoead),
-    testWithAemmt: _.partial(test, solveWithAemmt),
-    testWithAemmd: _.partial(test, solveWithAemmd),
-    testObjectives: testObjectives,
-    instances: []
+  _.set(moea, 'problem.knapsack.experiment', {
+    run: run,
+    getFormattedResults: getFormattedResults
   });
+
 }());

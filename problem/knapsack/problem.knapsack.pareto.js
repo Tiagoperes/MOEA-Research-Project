@@ -121,14 +121,8 @@
   }
 
   function loadUnsavedPareto(instance) {
-    var dbPareto = loadPareto(instance),
-        diffs;
-
-    if (dbPareto === instance.pareto) return null;
-    diffs = getDifferencesBetweenParetos(instance.pareto, dbPareto);
-    if (diffs.added) return dbPareto;
-    erasePareto(instance);
-    return null;
+    var dbPareto = loadPareto(instance);
+    return (dbPareto.length === instance.pareto.length) ? null : dbPareto;
   }
 
   window.moea = window.moea || {};

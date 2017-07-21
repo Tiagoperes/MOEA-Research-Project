@@ -100,9 +100,8 @@
     this.message = 'IncompleteParetoException: ' + solutions.length + ' solutions found. It is advised to update the Pareto and restart the experiments.';
   }
 
-  function UnsavedParetoException(instanceId, paretoToSave) {
+  function UnsavedParetoException(paretoToSave) {
     this.name = 'UnsavedParetoException';
-    this.instance = instanceId;
     this.pareto = paretoToSave;
     this.message = 'There are unsaved changes to the Pareto corresponding to this problem instance. Please, save the Pareto and try again.';
   }
