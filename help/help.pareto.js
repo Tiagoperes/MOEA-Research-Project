@@ -117,8 +117,39 @@
   UnsavedParetoException.prototype.name = 'UnsavedParetoException';
   UnsavedParetoException.prototype.constructor = UnsavedParetoException;
 
+  function getNonDominatedSetMTAux(solutions, ndSet, objectives) {
+    return _.filter(solutions, function (s) {
+      return !isDominatedBySet(s, ndSet, objectives);
+    });
+  }
 
-  window.moea = window.moea || {};
+  function getNonDominatedSetMT(solutions, objectives) {
+    var startTime = new Date().getTime();
+
+    var numberOfThreads = 4;
+    var chunkSize = Math.floor(solutions.length / numberOfThreads);
+    var ndSet = [];
+    var threads = [];
+    return new Promise(function (resolve) {
+      for (let i = 0; i < numberOfThreads; i++) {
+        let start = i * chunkSize;
+        let end = (i === numberOfThreads - 1) ? solutions.length : start + chunkSize;
+        let chunk = _.slice(solutions, start, end);
+        threads[i] = moea.help.thread(['lib/lodash.js', 'help/help.pareto.js'], 'moea.help.pareto.getNonDominatedSetMTAux', chunk, solutions, objectives);
+        threads[i].then(function (result) {
+          _.pushAll(ndSet, result);
+        });
+      }
+      Promise.all(threads).then(function () {
+        resolve(ndSet);
+        console.log('time: ' + (new Date().getTime() - startTime) / 1000 + 's');
+      });
+    });
+  }
+
+
+
+  self.moea = self.moea || {};
   _.set(moea, 'help.pareto', {
     dominates: dominates,
     isDominatedBySet: isDominatedBySet,
@@ -127,6 +158,8 @@
     getSolutionInObjectiveSpace: getSolutionInObjectiveSpace,
     ParetoException: ParetoException,
     IncompleteParetoException: IncompleteParetoException,
-    UnsavedParetoException: UnsavedParetoException
+    UnsavedParetoException: UnsavedParetoException,
+    getNonDominatedSetMT: getNonDominatedSetMT,
+    getNonDominatedSetMTAux: getNonDominatedSetMTAux
   });
 }());
