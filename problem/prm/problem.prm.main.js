@@ -148,7 +148,7 @@
     return sum / numberOfEdges;
   }
 
-  function getObjectives(problem) {
+  function getObjectives(instance) {
     var problems = [
       [getTreeCost, getTreeE2EDelay],
       [getTreeCost, getTotalDelay],
@@ -160,15 +160,20 @@
       [getMedianLinkUsage, getMaxLinkUsage, getTreeCost, getMaxDelay, getHopsCount, getMedianDelay]
     ];
 
-    return problems[problem - 1];
+    return _.map(problems[instance.problem - 1], function (objective) {
+      return _.partial(objective, _, instance);
+    });
   }
 
-  function getInstance(network, problem) {
+  function getInstance(problem, network) {
     var instance = {
       network: moea.problem.prm.instances['rede' + network],
       problem: problem,
-      pareto: moea.problem.prm.paretos[network][problem]
+      pareto: moea.problem.prm.paretos[network][problem - 1]
     };
+    if (!instance.pareto) {
+      throw new Error('No Pareto found for problem ' + problem + ' and network ' + network);
+    }
     instance.network.name = network;
     return instance;
   }

@@ -277,7 +277,7 @@
   window.mtotal = 0;
 
   window.moea = window.moea || {};
-  _.set(moea, 'help.tree.dijkstraGa', {
+  _.set(moea, 'problem.prm.crossover.similarity', {
     crossover: crossover,
     mutate: mutate
   });
