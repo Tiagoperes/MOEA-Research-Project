@@ -28,11 +28,14 @@
         archiveSize: 90,
         numberOfGenerations: 100,
         shouldNormalize: false,
+        useFilter: false,
         elementsPerTable: 30,
-        randomize: _.partial(moea.help.tree.randomize.generateRandom, net.graph, net.root, net.destinations),
+        randomize: _.partial(moea.problem.prm.recombination.similarityCrossover.reconnectGraphInTree, [], net.graph, net.root, net.destinations, moea.problem.prm.recombination.heuristic.random.connect),
+        // randomize: _.partial(moea.help.tree.randomize.generateRandom, net.graph, net.root, net.destinations),
         objectives: prm.getObjectives(instance),
-        crossover: {rate: 1, method: _.partial(moea.problem.prm.crossover.path.crossover, _, _, net.root, net.destinations)},
-        mutation: {rate: 0.2, method: _.partial(moea.problem.prm.crossover.similarity.mutate, _, net.graph, net.root, net.destinations, DISCONNECTION_RATE)}
+        crossover: {rate: 1, method: _.partial(moea.problem.prm.recombination.similarityCrossover.crossover, _, _, net.graph, net.root, net.destinations, moea.problem.prm.recombination.heuristic.random.connect)},
+        // crossover: {rate: 1, method: _.partial(moea.problem.prm.recombination.pathCrossover.crossover, _, _, net.root, net.destinations)},
+        mutation: {rate: 0.2, method: _.partial(moea.problem.prm.recombination.mutation.mutate, _, net.graph, net.root, net.destinations, DISCONNECTION_RATE)}
       },
       nsga: {},
       nsga3: {

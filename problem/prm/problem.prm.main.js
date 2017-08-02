@@ -3,29 +3,9 @@
 
   const DATA_FLOW = 300;
 
-  function isValidTree(tree, root) {
-    var visited = _.fill(new Array(tree.length), false),
-        explore = [root];
-
-    while (explore.length) {
-      let node = explore.shift();
-      if (visited[node]) {
-        return false;
-      }
-      visited[node] = true;
-      _.pushAll(explore, tree[node]);
-    }
-
-    return true;
-  }
-
   function getWeightSum(tree, property, instance) {
     var explore = [instance.network.root];
     var sum = 0;
-
-    if (!isValidTree(tree, instance.network.root)) {
-      return Infinity;
-    }
 
     while (explore.length) {
       let node = explore.shift();
@@ -38,16 +18,16 @@
     return sum;
   }
 
-  function getEndToEndDelay(tree, source, target, delay, instance) {
+  function getEndToEndDelay(tree, source, target, delay, weights) {
     var i = 0, result;
 
     if (source === target) {
       return delay;
     }
 
-    while (!result && i < tree[source].length) {
+    while (!result && tree[source] && i < tree[source].length) {
       let child = tree[source][i];
-      result = getEndToEndDelay(tree, child, target, delay + instance.network.weights[source][child].delay, instance);
+      result = getEndToEndDelay(tree, child, target, delay + weights[source][child].delay, weights);
       i++;
     }
 
@@ -59,13 +39,9 @@
   }
 
   function getTreeE2EDelay(tree, instance) {
-    if (!isValidTree(tree, instance.network.root)) {
-      return Infinity;
-    }
-
-    return -_.reduce(instance.network.destinations, function (sum, node) {
-      var e2e = getEndToEndDelay(tree, instance.network.root, node, 0, instance);
-      return sum + (e2e <= instance.network.dmax ? 1 : 0);
+    return _.reduce(instance.network.destinations, function (sum, node) {
+      var e2e = getEndToEndDelay(tree, instance.network.root, node, 0, instance.network.weights);
+      return sum + (e2e <= instance.network.dmax ? 0 : 1);
     }, 0);
   }
 
@@ -76,33 +52,21 @@
   function getMedianDelay(tree, instance) {
     var total;
 
-    if (!isValidTree(tree, instance.network.root)) {
-      return Infinity;
-    }
-
     total = _.sumBy(instance.network.destinations, function (node) {
-      return getEndToEndDelay(tree, instance.network.root, node, 0, instance);
+      return getEndToEndDelay(tree, instance.network.root, node, 0, instance.network.weights);
     });
 
     return total / instance.network.destinations.length;
   }
 
   function getMaxDelay(tree, instance) {
-    if (!isValidTree(tree, instance.network.root)) {
-      return Infinity;
-    }
-
    return _.reduce(instance.network.destinations, function (max, node) {
-      var d = getEndToEndDelay(tree, instance.network.root, node, 0, instance);
+      var d = getEndToEndDelay(tree, instance.network.root, node, 0, instance.network.weights);
       return d > max ? d : max;
     }, 0);
   }
 
-  function getHopsCount(tree, instance) {
-    if (!isValidTree(tree, instance.network.root)) {
-      return Infinity;
-    }
-
+  function getHopsCount(tree) {
     return _.sumBy(tree, 'length');
   }
 
@@ -113,10 +77,6 @@
 
   function getMaxLinkUsage(tree, instance) {
     var max = 0;
-
-    if (!isValidTree(tree, instance.network.root)) {
-      return Infinity;
-    }
 
     for (let i = 0; i < tree.length; i++) {
       _.forEach(tree[i], function (edge) {
@@ -133,10 +93,6 @@
   function getMedianLinkUsage(tree, instance) {
     var sum = 0,
         numberOfEdges = 0;
-
-    if (!isValidTree(tree, instance.network.root)) {
-      return Infinity;
-    }
 
     for (let i = 0; i < tree.length; i++) {
       _.forEach(tree[i], function (edge) {

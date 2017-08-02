@@ -30,6 +30,7 @@
     for (let i = 1; i < branch.length; i++) {
       if (!_.includes(graph[branch[i - 1]], branch[i])) {
         graph[branch[i - 1]].push(branch[i]);
+        graph[branch[i]] = graph[branch[i]] || [];
       }
     }
   }
@@ -91,7 +92,7 @@
   }
 
   window.moea = window.moea || {};
-  _.set(moea, 'problem.prm.crossover.path', {
+  _.set(moea, 'problem.prm.recombination.pathCrossover', {
     crossover: crossover
   });
 }());
