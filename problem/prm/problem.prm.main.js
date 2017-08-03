@@ -39,9 +39,9 @@
   }
 
   function getTreeE2EDelay(tree, instance) {
-    return _.reduce(instance.network.destinations, function (sum, node) {
+    return -_.reduce(instance.network.destinations, function (sum, node) {
       var e2e = getEndToEndDelay(tree, instance.network.root, node, 0, instance.network.weights);
-      return sum + (e2e <= instance.network.dmax ? 0 : 1);
+      return sum + (e2e <= instance.network.dmax ? 1 : 0);
     }, 0);
   }
 

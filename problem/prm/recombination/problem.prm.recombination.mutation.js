@@ -23,7 +23,7 @@
 
   function mutate(tree, baseGraph, root, destinations, disconnectionRate) {
     var crossover =  moea.problem.prm.recombination.similarityCrossover,
-        connectionHeuristic = moea.problem.prm.recombination.heuristic.random.connect,
+        connectionHeuristic = moea.problem.prm.recombination.heuristic.random,
         graph;
 
     disconnect(tree, disconnectionRate);

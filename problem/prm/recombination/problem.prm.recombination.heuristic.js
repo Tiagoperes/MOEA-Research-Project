@@ -43,6 +43,19 @@
     return null;
   }
 
+  function findClosestPath(weights, graph, startingNode, endingNode) {
+    var dijkstraResult = moea.help.dijkstra(graph, weights, startingNode),
+        path = [],
+        vertex = dijkstraResult[endingNode].parent;
+
+    while (vertex !== startingNode) {
+      path.unshift(vertex);
+      vertex = dijkstraResult[vertex].parent;
+    }
+
+    return path;
+  }
+
   function merge(g1, g2) {
     _.forEach(g2, function (edges, vertex) {
       if (edges) {
@@ -61,16 +74,21 @@
     }
   }
 
-  function connect(graph, component, baseGraph) {
+  function connect(findPath, graph, component, baseGraph) {
     var startingVertices = getVertices(graph),
         endingVertices = getVertices(component),
         virtual = createVirtualNodes(baseGraph, startingVertices, endingVertices),
-        path = findRandomPath(virtual.graph, virtual.start, virtual.end);
+        path = findPath(virtual.graph, virtual.start, virtual.end);
 
     merge(graph, component);
     addPathToGraph(graph, path);
   }
 
   window.moea = window.moea || {};
-  _.set(moea, 'problem.prm.recombination.heuristic.random.connect', connect);
+  _.set(moea, 'problem.prm.recombination.heuristic', {
+    random: _.partial(connect, findRandomPath),
+    dijkstra:  function (weights, graph, component, baseGraph) {
+      return connect(_.partial(findClosestPath, weights), graph, component, baseGraph);
+    }
+  });
 }());

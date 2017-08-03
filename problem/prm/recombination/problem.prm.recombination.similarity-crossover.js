@@ -52,22 +52,6 @@
     return vertex;
   }
 
-  function makeTreeFromGraph(graph, root) {
-    var tree = moea.help.graph.createEmptyGraph(graph.length),
-        explore = [root],
-        isVisited = _.fill(new Array(graph.length), false);
-
-    while (explore.length) {
-      let exploring = explore.pop();
-      isVisited[exploring] = true;
-      let children = _.filter(graph[exploring], _.negate(_.partial(_.get, isVisited)));
-      explore = _.concat(explore, children);
-      tree[exploring] = children;
-    }
-
-    return tree;
-  }
-
   function reconnectGraphInTree(graph, baseGraph, root, destinations, connectionHeuristic) {
     var g = _.cloneDeep(graph),
         connectedGraph = extractComponentWithRoot(g, root),
@@ -83,7 +67,7 @@
 
     window.last = _.cloneDeep(connectedGraph);
     moea.help.graph.removeCycles(connectedGraph, root);
-    return moea.help.graph.pruneTree(makeTreeFromGraph(connectedGraph, root), destinations);
+    return moea.help.graph.pruneTree(moea.help.graph.makeTreeFromGraph(connectedGraph, root), destinations);
   }
 
   function crossover(p1, p2, baseGraph, root, destinations, connectionHeuristic) {

@@ -59,10 +59,27 @@
     return tree;
   }
 
+  function makeTreeFromGraph(graph, root) {
+    var tree = createEmptyGraph(graph.length),
+        explore = [root],
+        isVisited = _.fill(new Array(graph.length), false);
+
+    while (explore.length) {
+      let exploring = explore.pop();
+      isVisited[exploring] = true;
+      let children = _.filter(graph[exploring], _.negate(_.partial(_.get, isVisited)));
+      explore = _.concat(explore, children);
+      tree[exploring] = children;
+    }
+
+    return tree;
+  }
+
   window.moea = window.moea || {};
   _.set(moea, 'help.graph', {
     createEmptyGraph: createEmptyGraph,
     removeCycles: removeCycles,
-    pruneTree: pruneTree
+    pruneTree: pruneTree,
+    makeTreeFromGraph: makeTreeFromGraph
   });
 }());

@@ -5,14 +5,14 @@
     return tree[node].length === 0;
   }
 
-  function breakTreeInBranches(tree, root, parents, branches) {
+  function breakTreeInBranches(tree, root, destinations, parents, branches) {
     var explore = tree[root];
     parents = parents ? _.concat(parents, [root]) : [root];
     branches = branches || {};
 
     _.forEach(explore, function (node) {
-      if (isLeaf(tree, node)) branches[node] = _.concat(parents, [node]);
-      breakTreeInBranches(tree, node, parents, branches)
+      if (_.includes(destinations, node)) branches[node] = _.concat(parents, [node]);
+      breakTreeInBranches(tree, node, destinations, parents, branches)
     });
 
     return branches;
@@ -75,8 +75,8 @@
   }
 
   function crossover(a, b, root, destinations) {
-    var branchesA = breakTreeInBranches(a, root),
-        branchesB = breakTreeInBranches(b, root),
+    var branchesA = breakTreeInBranches(a, root, destinations),
+        branchesB = breakTreeInBranches(b, root, destinations),
         graph = createEmptyGraph(a.length);
 
     _.forEach(destinations, function (dest) {
@@ -86,9 +86,9 @@
       if (possibilities.length) addBranchToGraph(_.sample(possibilities), graph);
     });
 
-    removeCycles(graph, root);
-    pruneTree(graph, destinations);
-    return [graph];
+
+    moea.help.graph.removeCycles(graph, root);
+    return [moea.help.graph.pruneTree(moea.help.graph.makeTreeFromGraph(graph, root), destinations)];
   }
 
   window.moea = window.moea || {};

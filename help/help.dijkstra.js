@@ -77,8 +77,10 @@
     while (!queue.isEmpty()) {
       let vertex = queue.extract();
       _.forEach(graph[vertex.label], function (child) {
-        if (vertices[child].distance > vertex.distance + weights[vertex.label][child]) {
-          vertices[child].distance = vertex.distance + weights[vertex.label][child];
+        var edgeWeight = weights[vertex.label] && weights[vertex.label][child] ? weights[vertex.label][child] : 0,
+            cost = vertex.distance + edgeWeight;
+        if (vertices[child].distance > cost) {
+          vertices[child].distance = cost;
           vertices[child].parent = vertex.label;
           queue.update(child);
         }
