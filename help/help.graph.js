@@ -29,8 +29,9 @@
     }
   }
 
+  //fixme verificar pq precisa verificar !tree[node]
   function isLeaf(tree, node) {
-    return tree[node].length === 0;
+    return !tree[node] || tree[node].length === 0;
   }
 
   function getNonDestinationLeafs(tree, destinations) {
