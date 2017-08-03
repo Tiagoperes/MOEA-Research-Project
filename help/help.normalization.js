@@ -16,23 +16,25 @@
   }
 
   function updateExtremes(population, extremes) {
-    var updated = false;
+    var newExtremes = initializeExtremes(extremes.min.length);
+
     _.forEach(population, function (individual) {
       _.forEach(individual.evaluation, function (value, index) {
-        if (value < extremes.min[index]) {
-          extremes.min[index] = value;
-          updated = true;
+        if (value < newExtremes.min[index]) {
+          newExtremes.min[index] = value;
         }
-        if (value > extremes.max[index]) {
-          extremes.max[index] = value;
-          updated = true;
+        if (value > newExtremes.max[index]) {
+          newExtremes.max[index] = value;
         }
       });
     });
 
-    if (updated) calculateExtremesDif(extremes);
-
-    return updated;
+    if (!_.isEqual(extremes.min, newExtremes.min) || !_.isEqual(extremes.max, newExtremes.max)) {
+      extremes.min = newExtremes.min;
+      extremes.max = newExtremes.max;
+      calculateExtremesDif(extremes);
+      return true;
+    }
   }
 
   function calculateNormalizedValues(population, extremes) {
@@ -43,7 +45,7 @@
   }
 
   function normalize(oldPopulation, newPopulation, extremes) {
-    var extremesUpdated = updateExtremes(newPopulation, extremes);
+    var extremesUpdated = updateExtremes(_.concat(oldPopulation, newPopulation), extremes);
     if (extremesUpdated) {
       calculateNormalizedValues(oldPopulation, extremes);
     }

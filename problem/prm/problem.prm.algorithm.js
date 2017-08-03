@@ -28,7 +28,7 @@
         populationSize: 90,
         archiveSize: 90,
         numberOfGenerations: 100,
-        shouldNormalize: false,
+        shouldNormalize: true,
         useFilter: true,
         elementsPerTable: 30,
         randomize: _.partial(moea.problem.prm.recombination.similarityCrossover.reconnectGraphInTree, [], net.graph, net.root, net.destinations, moea.problem.prm.recombination.heuristic.random),
