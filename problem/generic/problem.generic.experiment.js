@@ -13,25 +13,6 @@
     });
   }
 
-  function getVertices(tree, root) {
-    var explore = [root];
-    var visited = _.fill(new Array(tree.length), false);
-
-    while(explore.length) {
-      let node = explore.pop();
-      visited[node] = true;
-      if (_.filter(tree[node], _.partial(_.get, visited)).length) {
-        throw new Error('Tree has cycles');
-      }
-      explore = _.concat(explore, tree[node]);
-    }
-
-    return _.reduce(visited, function (result, value, index) {
-      if (value) result.push(index);
-      return result;
-    }, []);
-  }
-
   function containsAll(a, b) {
     for (let i = 0; i < b.length; i++) {
       if (!_.includes(a, b[i])) return false;
@@ -42,8 +23,14 @@
   window.checkSolutions = function (solutions, instance) {
     var invalid = 0;
     _.forEach(solutions, function (tree) {
-      var vertices = getVertices(tree, instance.network.root);
-      if (!containsAll(vertices, instance.network.destinations)) invalid++;
+      if (tree.hasCycle(instance.network.root)) {
+        invalid++;
+        console.log('cycle :(');
+      }
+      else {
+        let vertices = tree.getAchievableVertices(instance.network.root);
+        if (!containsAll(vertices, instance.network.destinations)) invalid++;
+      }
     });
     console.log(invalid + ' invalid solutions of a total of ' + solutions.length);
     return invalid === 0;

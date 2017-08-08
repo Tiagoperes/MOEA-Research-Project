@@ -4,12 +4,13 @@
   const DATA_FLOW = 300;
 
   function getWeightSum(tree, property, instance) {
-    var explore = [instance.network.root];
-    var sum = 0;
+    var tArray = tree.asArray(),
+        explore = [instance.network.root],
+        sum = 0;
 
     while (explore.length) {
       let node = explore.shift();
-      _.forEach(tree[node], function (child) {
+      _.forEach(tArray[node], function (child) {
         explore.push(child);
         sum += instance.network.weights[node][child][property];
       });
@@ -19,14 +20,16 @@
   }
 
   function getEndToEndDelay(tree, source, target, delay, weights) {
-    var i = 0, result;
+    var tArray = tree.asArray(),
+        i = 0,
+        result;
 
     if (source === target) {
       return delay;
     }
 
-    while (!result && tree[source] && i < tree[source].length) {
-      let child = tree[source][i];
+    while (!result && tArray[source] && i < tArray[source].length) {
+      let child = tArray[source][i];
       result = getEndToEndDelay(tree, child, target, delay + weights[source][child].delay, weights);
       i++;
     }
@@ -67,7 +70,7 @@
   }
 
   function getHopsCount(tree) {
-    return _.sumBy(tree, 'length');
+    return tree.size().edges;
   }
 
   function getLinkUsage(v1, v2, instance) {
@@ -76,10 +79,11 @@
   }
 
   function getMaxLinkUsage(tree, instance) {
-    var max = 0;
+    var tArray = tree.asArray(),
+        max = 0;
 
-    for (let i = 0; i < tree.length; i++) {
-      _.forEach(tree[i], function (edge) {
+    for (let i = 0; i < tArray.length; i++) {
+      _.forEach(tArray[i], function (edge) {
         var usage = getLinkUsage(i, edge, instance);
         if (usage > max) {
           max = usage;
@@ -91,11 +95,12 @@
   }
 
   function getMedianLinkUsage(tree, instance) {
-    var sum = 0,
+    var tArray = tree.asArray(),
+        sum = 0,
         numberOfEdges = 0;
 
-    for (let i = 0; i < tree.length; i++) {
-      _.forEach(tree[i], function (edge) {
+    for (let i = 0; i < tArray.length; i++) {
+      _.forEach(tArray[i], function (edge) {
         sum += getLinkUsage(i, edge, instance);
         numberOfEdges++;
       });
@@ -127,6 +132,9 @@
       problem: problem,
       pareto: moea.problem.prm.paretos[network][problem - 1]
     };
+    if (!(instance.network.graph instanceof moea.help.Graph)) {
+      instance.network.graph = new moea.help.Graph(instance.network.graph);
+    }
     if (!instance.pareto) {
       throw new Error('No Pareto found for problem ' + problem + ' and network ' + network);
     }

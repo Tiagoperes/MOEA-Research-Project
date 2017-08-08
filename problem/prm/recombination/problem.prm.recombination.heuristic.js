@@ -1,34 +1,28 @@
 (function () {
 
-  function getVertices(graph) {
-    return _.reduce(graph, function (result, edges, vertex) {
-      if (edges) result.push(vertex);
-      return result;
-    }, []);
-  }
-
   function createVirtualNodes(graph, start, end) {
-    var vgraph = _.cloneDeep(graph);
+    var vgraph = graph.clone(),
+        startNode = vgraph.createVertex(),
+        endNode = vgraph.createVertex();
 
-    vgraph.push(start);
-    vgraph.push([]);
+    vgraph.setEdges(startNode, start);
 
     _.forEach(end, function (vertex) {
-      vgraph[vertex].push(vgraph.length - 1);
+      vgraph.createEdge(vertex, endNode);
     });
 
     return {
       graph: vgraph,
-      start: vgraph.length - 2,
-      end: vgraph.length - 1
+      start: startNode,
+      end: endNode
     };
   }
 
   function findRandomPath(graph, startingNode, endingNode, isVisited, path) {
-    var children = _.clone(graph[startingNode]);
+    var children = _.clone(graph.getEdges(startingNode));
 
     if (_.includes(children, endingNode)) return path;
-    isVisited = isVisited || _.fill(new Array(graph.length), false);
+    isVisited = isVisited || _.fill(new Array(graph.size().vertices), false);
     path = path || [];
 
     while (children.length) {
@@ -56,32 +50,14 @@
     return path;
   }
 
-  function merge(g1, g2) {
-    _.forEach(g2, function (edges, vertex) {
-      if (edges) {
-        g1[vertex] = g1[vertex] || [];
-        _.pushAll(g1[vertex], edges);
-      }
-    });
-  }
-
-  function addPathToGraph(graph, path) {
-    for (let i = 0; i < path.length - 1; i++) {
-      graph[path[i]] = graph[path[i]] || [];
-      if (!_.includes(graph[path[i]], path[i + 1])) {
-        graph[path[i]].push(path[i + 1]);
-      }
-    }
-  }
-
   function connect(findPath, graph, component, baseGraph) {
-    var startingVertices = getVertices(graph),
-        endingVertices = getVertices(component),
+    var startingVertices = graph.getVertices(),
+        endingVertices = component.getVertices(),
         virtual = createVirtualNodes(baseGraph, startingVertices, endingVertices),
         path = findPath(virtual.graph, virtual.start, virtual.end);
 
-    merge(graph, component);
-    addPathToGraph(graph, path);
+    graph.merge(component);
+    graph.createPath(path);
   }
 
   window.moea = window.moea || {};
