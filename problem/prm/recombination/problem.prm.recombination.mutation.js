@@ -19,9 +19,20 @@
     var crossover =  moea.problem.prm.recombination.similarityCrossover,
         connectionHeuristic = moea.problem.prm.recombination.heuristic.random;
 
+    if (window.debugMutation) moea.help.graphDesigner.draw(tree, root, destinations, window.debugWeightMatrix, window.debugWeights, window.evalData, 'Mutation: original');
     disconnect(tree, disconnectionRate);
+    if (window.debugMutation) {
+      moea.help.graphDesigner.draw(tree, root, destinations, window.debugWeightMatrix, window.debugWeights, window.evalData, 'Mutation: disconnected');
+      var prevDebug = window.debugCross;
+      window.debugCross = true;
+    }
     tree.makeDirectionless();
-    return crossover.reconnectGraphInTree(tree, baseGraph, root, destinations, connectionHeuristic);
+    var res = crossover.reconnectGraphInTree(tree, baseGraph, root, destinations, connectionHeuristic);
+    if (window.debugMutation) {
+      document.body.innerHTML += '<hr>';
+      window.debugCross = prevDebug;
+    }
+    return res;
   }
 
   window.moea = window.moea || {};

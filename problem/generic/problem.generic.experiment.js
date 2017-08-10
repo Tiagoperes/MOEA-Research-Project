@@ -43,6 +43,16 @@
         uniqueInOS = _.uniqWith(_.map(solutions, _.partial(moea.help.pareto.getSolutionInObjectiveSpace, _, objectives)), _.isEqual);
 
     checkSolutions(solutions, instance);
+
+    if (window.debugResult) {
+      let us = _.uniqWith(solutions, function (a, b) {
+        return _.isEqual(moea.help.pareto.getSolutionInObjectiveSpace(a, objectives), moea.help.pareto.getSolutionInObjectiveSpace(b, objectives));
+      });
+      _.forEach(us, function (sol) {
+        moea.help.graphDesigner.draw(sol, instance.network.root, instance.network.destinations, window.debugWeightMatrix, window.debugWeights, window.evalData);
+      });
+    }
+
     console.log(uniqueInOS);
 
     return moea.help.report.getMetrics(uniqueInOS, instance.pareto, worst);
@@ -78,7 +88,7 @@
   }
 
   function printReport(report) {
-    document.body.innerHTML = '<pre>' + JSON.stringify(report).replace(/"er":(\d+\.?\d*),"gd":(\d+\.?\d*),"ps":(\d+\.?\d*),"pcr":\d+\.?\d*,"sp":\d+\.?\d*,"fsp":(\d+\.?\d*),"ms":(\d+\.?\d*),"hv":(\d+\.?\d*)/g, '$1\t$2\t$3\t$4\t$5\t$6').replace(/(\d+)\.(\d+)/g,'$1,$2').replace(/[\{\}]/g, '').replace(/,"sd":/g, '\n"sd":') + '</pre>';
+    document.body.innerHTML += '<pre>' + JSON.stringify(report).replace(/"er":(\d+\.?\d*),"gd":(\d+\.?\d*),"ps":(\d+\.?\d*),"pcr":\d+\.?\d*,"sp":\d+\.?\d*,"fsp":(\d+\.?\d*),"ms":(\d+\.?\d*),"hv":(\d+\.?\d*)/g, '$1\t$2\t$3\t$4\t$5\t$6').replace(/(\d+)\.(\d+)/g,'$1,$2').replace(/[\{\}]/g, '').replace(/,"sd":/g, '\n"sd":') + '</pre>';
   }
 
   function checkInputForRun(input) {

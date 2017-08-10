@@ -58,6 +58,7 @@
 
     graph.merge(component);
     graph.createPath(path);
+    return path;
   }
 
   window.moea = window.moea || {};

@@ -1,7 +1,15 @@
 (function () {
   'use strict';
 
-  const DISCONNECTION_RATE = 0.4;
+  const DISCONNECTION_RATE = 0.2;
+
+  // window.debugCross = true;
+  // window.debugWeights = ['cost'];
+  // window.debugMutation = true;
+  // window.debugRandomGeneration = true;
+  // window.debugEvaluation = true;
+  // window.debugWeights = [];
+  // window.debugResult = true;
 
   var methods = {
     nsga: moea.method.nsga.main.execute,
@@ -32,22 +40,31 @@
       return _.sample(methods).apply(this, arguments);
     }
 
+    if (window.debugWeights) window.debugWeightMatrix = instance.network.weights;
+    if (window.debugEvaluation) {
+      window.evalData = {
+        instance: instance,
+        functions: prm.getAllEvaluationFunctions(),
+        dataFlow: prm.getDataFlow()
+      }
+    }
+
     var config = {
       global: {
-        populationSize: 90,
+        populationSize: 1,
         archiveSize: 90,
-        numberOfGenerations: 100,
+        numberOfGenerations: 0,
         shouldNormalize: true,
         useFilter: true,
         elementsPerTable: 30,
         randomize: _.partial(moea.problem.prm.recombination.similarityCrossover.reconnectGraphInTree, new moea.help.Graph(), net.graph, net.root, net.destinations, moea.problem.prm.recombination.heuristic.random),
         // randomize: _.partial(moea.help.tree.randomize.generateRandom, net.graph, net.root, net.destinations),
         objectives: prm.getObjectives(instance),
-        // crossover: {rate: 1, method: _.partial(moea.problem.prm.recombination.similarityCrossover.crossover, _, _, net.graph, net.root, net.destinations, moea.problem.prm.recombination.heuristic.random)},
+        crossover: {rate: 1, method: _.partial(moea.problem.prm.recombination.similarityCrossover.crossover, _, _, net.graph, net.root, net.destinations, moea.problem.prm.recombination.heuristic.random)},
         // crossover: {rate: 1, method: _.partial(moea.problem.prm.recombination.similarityCrossover.crossover, _, _, net.graph, net.root, net.destinations, dijkstra)},
         // crossover: {rate: 1, method: _.partial(moea.problem.prm.recombination.pathCrossover.crossover, _, _, net.root, net.destinations)},
-        crossover: {rate: 1, method: mixedCrossover},
-        mutation: {rate: 0.2, method: _.partial(moea.problem.prm.recombination.mutation.mutate, _, net.graph, net.root, net.destinations, DISCONNECTION_RATE)}
+        // crossover: {rate: 1, method: mixedCrossover},
+        mutation: {rate: 0, method: _.partial(moea.problem.prm.recombination.mutation.mutate, _, net.graph, net.root, net.destinations, DISCONNECTION_RATE)}
       },
       nsga: {},
       nsga3: {

@@ -126,6 +126,23 @@
     });
   }
 
+  function getAllEvaluationFunctions() {
+    return {
+      'custo total': getTreeCost,
+      'delay faf atendido': getTreeE2EDelay,
+      'delay total': getTotalDelay,
+      'delay faf medio': getMedianDelay,
+      'delay faf max': getMaxDelay,
+      'hops count': getHopsCount,
+      'utl. max enlaces': getMaxLinkUsage,
+      'utl. med enlaces': getMedianLinkUsage
+    };
+  }
+
+  function getDataFlow() {
+    return DATA_FLOW;
+  }
+
   function getInstance(problem, network) {
     var instance = {
       network: moea.problem.prm.instances['rede' + network],
@@ -145,6 +162,8 @@
   window.moea = window.moea || {};
   _.set(moea, 'problem.prm.main', {
     getInstance: getInstance,
-    getObjectives: getObjectives
+    getObjectives: getObjectives,
+    getAllEvaluationFunctions: getAllEvaluationFunctions,
+    getDataFlow: getDataFlow
   });
 }());

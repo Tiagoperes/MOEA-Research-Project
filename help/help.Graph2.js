@@ -89,8 +89,12 @@
       return vertex;
     };
 
-    this.removeVertex = function (vertex) {
-      delete data[vertex];
+    this.removeVertex = function (vertexToRemove) {
+      _.forEach(data, function (edges) {
+        var index = _.indexOf(edges, vertexToRemove);
+        if (index !== -1) edges.splice(index, 1);
+      });
+      delete data[vertexToRemove];
     };
 
     this.hasEdge = function (vertexA, vertexB) {
@@ -223,7 +227,7 @@
         let leaf = nonDestinationLeafs.pop();
         let parent = findParent(leaf);
         if (parent !== -1) {
-          _.remove(data[parent], _.partial(_.isEqual, leaf));
+          self.removeVertex(leaf);
           if (isLeaf(parent) && !_.includes(destinations, parent)) nonDestinationLeafs.push(parent);
         }
       }
