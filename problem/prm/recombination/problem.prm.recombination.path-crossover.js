@@ -31,11 +31,11 @@
     if (window.debugCross) {
       document.body.innerHTML += '<p><b>BRANCHES P1:</b><br>' + branchAsStr(branchesA, choices) + '</p>';
       document.body.innerHTML += '<p><b>BRANCHES P2:</b><br>' + branchAsStr(branchesB, choices) + '</p>';
-      moea.help.graphDesigner.draw(graph, root, destinations, window.debugWeightMatrix, window.debugWeights, window.evalData, 'Full child');
+      moea.help.graphDesigner.draw(graph, root, destinations, window.debugWeightMatrix, window.debugWeights, null, 'Full child');
     }
 
     graph.removeCycles(root);
-    if (window.debugCross) moea.help.graphDesigner.draw(graph, root, destinations, window.debugWeightMatrix, window.debugWeights, window.evalData, 'Cycleless child');
+    if (window.debugCross) moea.help.graphDesigner.draw(graph, root, destinations, window.debugWeightMatrix, window.debugWeights, null, 'Cycleless child');
     graph.prune(root, destinations);
     if (window.debugCross) {
       moea.help.graphDesigner.draw(graph, root, destinations, window.debugWeightMatrix, window.debugWeights, window.evalData, 'Pruned child');

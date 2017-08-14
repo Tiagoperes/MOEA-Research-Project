@@ -22,7 +22,7 @@
     if (window.debugMutation) moea.help.graphDesigner.draw(tree, root, destinations, window.debugWeightMatrix, window.debugWeights, window.evalData, 'Mutation: original');
     disconnect(tree, disconnectionRate);
     if (window.debugMutation) {
-      moea.help.graphDesigner.draw(tree, root, destinations, window.debugWeightMatrix, window.debugWeights, window.evalData, 'Mutation: disconnected');
+      moea.help.graphDesigner.draw(tree, root, destinations, window.debugWeightMatrix, window.debugWeights, null, 'Mutation: disconnected');
       var prevDebug = window.debugCross;
       window.debugCross = true;
     }

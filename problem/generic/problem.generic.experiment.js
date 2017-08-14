@@ -49,7 +49,15 @@
         return _.isEqual(moea.help.pareto.getSolutionInObjectiveSpace(a, objectives), moea.help.pareto.getSolutionInObjectiveSpace(b, objectives));
       });
       _.forEach(us, function (sol) {
-        moea.help.graphDesigner.draw(sol, instance.network.root, instance.network.destinations, window.debugWeightMatrix, window.debugWeights, window.evalData);
+        // var os = moea.help.pareto.getSolutionInObjectiveSpace(sol, objectives);
+        // os[0] = parseFloat((os[0]).toFixed(9));
+        // os[1] = parseFloat((os[1]).toFixed(9));
+        // os[5] = parseFloat((os[5]).toFixed(3));
+        // if (_.isEqual(os, [0.408172294, 0.652212389, 264, 74, 51, 32.486]) || _.isEqual(os, [0.41322128, 0.652212389, 251, 74, 51, 32.757])) {
+        //   window.weird = window.weird || [];
+        //   window.weird.push(sol);
+          moea.help.graphDesigner.draw(sol, instance.network.root, instance.network.destinations, window.debugWeightMatrix, window.debugWeights, window.evalData);
+        // }
       });
     }
 
@@ -64,12 +72,12 @@
       progress.next();
       return metrics;
     } catch (error) {
-      if (error instanceof moea.help.pareto.IncompleteParetoException) {
-        console.log(error.solutions.length + ' new solutions found. Updating Pareto and restarting experiment.');
-        problemSettings.saveToParetoDB(instance, error.solutions);
-        progress.reset();
-        return moea.help.database.create(dbName, true);
-      }
+      // if (error instanceof moea.help.pareto.IncompleteParetoException) {
+      //   console.log(error.solutions.length + ' new solutions found. Updating Pareto and restarting experiment.');
+      //   problemSettings.saveToParetoDB(instance, error.solutions);
+      //   progress.reset();
+      //   return moea.help.database.create(dbName, true);
+      // }
       throw error;
     }
   }

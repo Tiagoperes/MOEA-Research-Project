@@ -30,8 +30,8 @@
 
   function dominatesArray(p, q) {
     var better = false,
-      worse = false,
-      i = 0;
+        worse = false,
+        i = 0;
 
     while (!worse && i < p.length) {
       let dif = Math.abs(p[i] - q[i]);

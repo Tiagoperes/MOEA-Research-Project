@@ -18,24 +18,55 @@
     };
   }
 
-  function findRandomPath(graph, startingNode, endingNode, isVisited, path) {
-    var children = _.clone(graph.getEdges(startingNode));
+  function getPath(node) {
+    var path = [];
+    while (node.parent) {
+      path.push(node.vertex);
+      node = node.parent;
+    }
+    return _.reverse(path);
+  }
 
-    if (_.includes(children, endingNode)) return path;
-    isVisited = isVisited || _.fill(new Array(graph.size().vertices), false);
-    path = path || [];
+  function findRandomPath(graph, startingNode, endingNode) {
+    var explore = [{vertex: startingNode}],
+        isVisited = _.fill(new Array(graph.size().vertices), false);
 
-    while (children.length) {
-      let child = _.removeRandom(children);
-      if (!isVisited[child]) {
-        isVisited[child] = true;
-        let result = findRandomPath(graph, child, endingNode, isVisited, _.concat(path, [child]));
-        if (result) return result;
+    if (startingNode === endingNode) return [];
+
+    while(explore.length) {
+      let node = _.removeRandom(explore);
+      if (!isVisited[node.vertex]) {
+        isVisited[node.vertex] = true;
+        let edges = graph.getEdges(node.vertex);
+        for (let i = 0; i < edges.length; i++) {
+          let newNode = {vertex: edges[i], parent: node};
+          if (edges[i] === endingNode) return getPath(node);
+          explore.push(newNode);
+        }
       }
     }
 
     return null;
   }
+
+  // function findRandomPath(graph, startingNode, endingNode, isVisited, path) {
+  //   var children = _.clone(graph.getEdges(startingNode));
+  //
+  //   if (_.includes(children, endingNode)) return path;
+  //   isVisited = isVisited || _.fill(new Array(graph.size().vertices), false);
+  //   path = path || [];
+  //
+  //   while (children.length) {
+  //     let child = _.removeRandom(children);
+  //     if (!isVisited[child]) {
+  //       isVisited[child] = true;
+  //       let result = findRandomPath(graph, child, endingNode, isVisited, _.concat(path, [child]));
+  //       if (result) return result;
+  //     }
+  //   }
+  //
+  //   return null;
+  // }
 
   function findClosestPath(weights, graph, startingNode, endingNode) {
     var dijkstraResult = moea.help.dijkstra(graph, weights, startingNode),

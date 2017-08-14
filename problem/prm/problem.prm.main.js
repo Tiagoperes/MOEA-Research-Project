@@ -118,7 +118,8 @@
       [getTreeCost, getHopsCount],
       [getMaxLinkUsage, getTreeCost, getMaxDelay, getHopsCount],
       [getMedianLinkUsage, getMaxLinkUsage, getTreeCost, getMaxDelay, getHopsCount],
-      [getMedianLinkUsage, getMaxLinkUsage, getTreeCost, getMaxDelay, getHopsCount, getMedianDelay]
+      [getMedianLinkUsage, getMaxLinkUsage, getTreeCost, getMaxDelay, getHopsCount, getMedianDelay],
+      [getTreeCost, getMaxDelay, getHopsCount],
     ];
 
     return _.map(problems[instance.problem - 1], function (objective) {

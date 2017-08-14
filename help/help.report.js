@@ -41,9 +41,21 @@
     return report;
   }
 
+  function isSolutionEqual(a, b) {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      let dif = Math.abs(a[i] - b[i]);
+      if (dif > 0.00000001) return false;
+    }
+    return true;
+  }
+
   function getErrorRate(solutions, pareto) {
     var newSolutions = [];
     var sum =  _.sumBy(solutions, function (s) {
+      s[0] = parseFloat((s[0]).toFixed(9));
+      s[1] = parseFloat((s[1]).toFixed(9));
+      s[5] = parseFloat((s[5]).toFixed(3));
       var isDominated = moea.help.pareto.isDominatedBySet(s, pareto);
       if (isDominated) return 1;
       if (!SHOULD_IGNORE_NEW_SOLUTIONS && !_.find(pareto, _.partial(_.isEqual, s))) {
