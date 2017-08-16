@@ -55,9 +55,9 @@
     });
   }
 
-  function getSolutionInObjectiveSpace(s, objectiveArray) {
+  function getSolutionInObjectiveSpace(s, objectiveArray, isFinal) {
     return _.map(objectiveArray, function (o) {
-      return o(s);
+      return o(s, isFinal);
     });
   }
 

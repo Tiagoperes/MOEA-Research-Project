@@ -48,10 +48,20 @@
   function getConfig(method, instance) {
     var prm = moea.problem.prm.main,
         net = instance.network,
-        costs = _.map(net.weights, function (weightList) {
-          return _.map(weightList, 'cost');
-        }),
-        dijkstra = _.partial(moea.problem.prm.recombination.heuristic.dijkstra, costs);
+        problemWeights = prm.getProblemWeights(instance.problem),
+        dijkstra, dijkstraWeights;
+
+    dijkstraWeights = _.map(problemWeights, function (property) {
+      return _.map(net.weights, function (weightList) {
+        return _.map(weightList, function (weight) {
+          if (weight) {
+            if (property === 'capacity') return 1 / weight[property];
+            return weight[property];
+          }
+        });
+      })
+    });
+    dijkstra = _.partial(moea.problem.prm.recombination.heuristic.dijkstra, _.partial(_.sample, dijkstraWeights));
 
     function mixedCrossover() {
       var methods = [

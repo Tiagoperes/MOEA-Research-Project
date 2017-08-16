@@ -52,14 +52,15 @@
     return getWeightSum(tree, 'delay', instance);
   }
 
-  function getMedianDelay(tree, instance) {
-    var total;
+  function getMedianDelay(tree, instance, isFinal) {
+    var total, result;
 
     total = _.sumBy(instance.network.destinations, function (node) {
       return getEndToEndDelay(tree, instance.network.root, node, 0, instance.network.weights);
     });
 
-    return total / instance.network.destinations.length;
+    result = total / instance.network.destinations.length;
+    return isFinal ? parseFloat(result.toFixed(3)) : result;
   }
 
   function getMaxDelay(tree, instance) {
@@ -78,7 +79,7 @@
     return (w.traffic + DATA_FLOW) / w.capacity;
   }
 
-  function getMaxLinkUsage(tree, instance) {
+  function getMaxLinkUsage(tree, instance, isFinal) {
     var tArray = tree.asArray(),
         max = 0;
 
@@ -91,13 +92,14 @@
       });
     }
 
-    return max;
+    return isFinal ? parseFloat(max.toFixed(9)) : max;
   }
 
-  function getMedianLinkUsage(tree, instance) {
+  function getMedianLinkUsage(tree, instance, isFinal) {
     var tArray = tree.asArray(),
         sum = 0,
-        numberOfEdges = 0;
+        numberOfEdges = 0,
+        result;
 
     for (let i = 0; i < tArray.length; i++) {
       _.forEach(tArray[i], function (edge) {
@@ -106,7 +108,8 @@
       });
     }
 
-    return sum / numberOfEdges;
+    result = sum / numberOfEdges;
+    return isFinal ? parseFloat(result.toFixed(9)) : result;
   }
 
   function getObjectives(instance) {
@@ -125,6 +128,22 @@
     return _.map(problems[instance.problem - 1], function (objective) {
       return _.partial(objective, _, instance);
     });
+  }
+
+  function getProblemWeights(problem) {
+    var problemWeights = [
+      ['cost', 'delay'],
+      ['cost', 'delay'],
+      ['cost', 'delay'],
+      ['cost', 'delay'],
+      ['cost'],
+      ['cost', 'delay', 'capacity', 'traffic'],
+      ['cost', 'delay', 'capacity', 'traffic'],
+      ['cost', 'delay', 'capacity', 'traffic'],
+      ['cost', 'delay'],
+    ];
+
+    return problemWeights[problem - 1];
   }
 
   function getAllEvaluationFunctions() {
@@ -164,6 +183,7 @@
   _.set(moea, 'problem.prm.main', {
     getInstance: getInstance,
     getObjectives: getObjectives,
+    getProblemWeights: getProblemWeights,
     getAllEvaluationFunctions: getAllEvaluationFunctions,
     getDataFlow: getDataFlow
   });

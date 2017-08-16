@@ -33,7 +33,7 @@
         cell.solution = child.solution;
         cell.evaluation = child.evaluation;
         cell.fitness = childFitness;
-        return false;
+        // return false;
       }
     });
   }

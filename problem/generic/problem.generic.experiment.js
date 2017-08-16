@@ -40,7 +40,7 @@
     var solutions = problemSettings.runAlgorithm(method, instance),
         objectives = problemSettings.getObjectives(instance),
         worst = problemSettings.getWorst(),
-        uniqueInOS = _.uniqWith(_.map(solutions, _.partial(moea.help.pareto.getSolutionInObjectiveSpace, _, objectives)), _.isEqual);
+        uniqueInOS = _.uniqWith(_.map(solutions, _.partial(moea.help.pareto.getSolutionInObjectiveSpace, _, objectives, true)), _.isEqual);
 
     checkSolutions(solutions, instance);
 
