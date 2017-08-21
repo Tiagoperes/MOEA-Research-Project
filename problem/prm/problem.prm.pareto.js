@@ -2,17 +2,17 @@
   'use strict';
 
   function getDBName(instance) {
-    return 'mkp-pareto-' + instance.objectives + '-' + instance.items;
+    return 'prm-pareto-' + instance.problem + '-' + instance.network.name;
   }
 
-  function updatePareto(numberOfObjectives, numberOfItems, numberOfExecutions, methods, shouldReset) {
-    var mkp = moea.problem.knapsack,
-        instance = mkp.main.getInstance(numberOfObjectives, numberOfItems),
-        objectives = mkp.main.getObjectives(instance),
+  function updatePareto(problem, network, numberOfExecutions, methods, shouldReset) {
+    var prm = moea.problem.prm,
+        instance = prm.main.getInstance(problem, network),
+        objectives = prm.main.getObjectives(instance),
         dbName = getDBName(instance),
-        runner = mkp.algorithm.run;
+        runner = prm.algorithm.run;
 
-    methods = methods || _.keys(mkp.algorithm.methods);
+    methods = methods || _.keys(prm.algorithm.methods);
 
     return moea.problem.generic.pareto.update(instance, objectives, dbName, runner, numberOfExecutions, methods, shouldReset);
   }
@@ -26,7 +26,7 @@
   }
 
   window.moea = window.moea || {};
-  _.set(moea, 'problem.knapsack.pareto', {
+  _.set(moea, 'problem.prm.pareto', {
     update: updatePareto,
     saveToParetoDB: saveToParetoDB,
     loadUnsavedPareto: loadUnsavedPareto

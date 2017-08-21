@@ -29,25 +29,48 @@
 
   function findRandomPath(graph, startingNode, endingNode) {
     var explore = [{vertex: startingNode}],
-        isVisited = _.fill(new Array(graph.size().vertices), false);
+        isVisible = _.fill(new Array(graph.size().vertices), false);
 
     if (startingNode === endingNode) return [];
+    isVisible[startingNode] = true;
 
     while(explore.length) {
       let node = _.removeRandom(explore);
-      if (!isVisited[node.vertex]) {
-        isVisited[node.vertex] = true;
-        let edges = graph.getEdges(node.vertex);
-        for (let i = 0; i < edges.length; i++) {
+      let edges = graph.getEdges(node.vertex);
+      for (let i = 0; i < edges.length; i++) {
+        if (!isVisible[edges[i]]) {
           let newNode = {vertex: edges[i], parent: node};
           if (edges[i] === endingNode) return getPath(node);
           explore.push(newNode);
+          isVisible[edges[i]] = true;
         }
       }
     }
 
     return null;
   }
+
+  // function findRandomPath(graph, startingNode, endingNode) {
+  //   var explore = [{vertex: startingNode}],
+  //       isVisited = _.fill(new Array(graph.size().vertices), false);
+  //
+  //   if (startingNode === endingNode) return [];
+  //
+  //   while(explore.length) {
+  //     let node = _.removeRandom(explore);
+  //     if (!isVisited[node.vertex]) {
+  //       isVisited[node.vertex] = true;
+  //       let edges = graph.getEdges(node.vertex);
+  //       for (let i = 0; i < edges.length; i++) {
+  //         let newNode = {vertex: edges[i], parent: node};
+  //         if (edges[i] === endingNode) return getPath(node);
+  //         explore.push(newNode);
+  //       }
+  //     }
+  //   }
+  //
+  //   return null;
+  // }
 
   // function findRandomPath(graph, startingNode, endingNode, isVisited, path) {
   //   var children = _.clone(graph.getEdges(startingNode));

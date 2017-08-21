@@ -9,8 +9,8 @@
     var instance = moea.problem.prm.main.getInstance(problem, network),
         dbName = getDBName(problem, network, method),
         settings = {
-          loadUnsavedPareto: _.wrap(null),
-          saveToParetoDB: function (){},
+          loadUnsavedPareto: moea.problem.prm.pareto.loadUnsavedPareto,
+          saveToParetoDB: moea.problem.prm.pareto.saveToParetoDB,
           runAlgorithm: moea.problem.prm.algorithm.run,
           getObjectives: moea.problem.prm.main.getObjectives,
           getWorst: _.wrap(_.fill(new Array(6), 0))
