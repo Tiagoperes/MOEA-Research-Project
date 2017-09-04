@@ -166,6 +166,7 @@
       _.forEach(dataToMerge, function (edges, vertex) {
         _.forEach(edges, _.partial(self.createEdge, vertex));
       });
+      return self;
     };
 
     this.removeComponentWithVertex = function (vertex) {

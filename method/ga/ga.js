@@ -87,6 +87,7 @@
     generateRandomPopulation: generateRandomPopulation,
     selectParents: selectParents,
     generateOffspring: generateOffspring,
+    mutate: mutate,
     randomizeIdenticalIndividuals: randomizeIdenticalIndividuals,
     getNumberOfGenerations: getNumberOfGenerations,
     logGeneration: logGeneration,

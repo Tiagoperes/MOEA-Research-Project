@@ -3,6 +3,14 @@
 
   const DISCONNECTION_RATE = 0.2;
 
+  const MOEAD_DIVISIONS = {
+    4: 90,
+    9: 12,
+    6: 6,
+    7: 6,
+    8: 6
+  };
+
   // window.debugCross = true;
   // window.debugWeights = ['cost'];
   // window.debugMutation = true;
@@ -42,7 +50,8 @@
     moeadd: moea.method.moeadd.main.execute,
     aemmt: moea.method.aemmt.main.execute,
     aemmtf: moea.method.aemmt.main.execute,
-    aemmd: moea.method.aemmd.main.execute
+    aemmd: moea.method.aemmd.main.execute,
+    psotree: moea.method.psotree.main.execute
   };
 
   function getConfig(method, instance) {
@@ -82,6 +91,15 @@
       }
     }
 
+    function getMaxEdges(graph) {
+      var max = 0;
+      for (let i = 0; i < graph.size().vertices; i++) {
+        let numberOfEdges = graph.getEdges(i).length;
+        if (numberOfEdges > max) max = numberOfEdges;
+      }
+      return max;
+    }
+
     var config = {
       global: {
         populationSize: 90,
@@ -116,6 +134,7 @@
       },
       moeadd: {
         comparisons: 9000,
+        divisions: MOEAD_DIVISIONS[instance.problem],
         neighborhoodSize: 10,
         localReproductionRate: 0.9
       },
@@ -129,6 +148,30 @@
       },
       aemmd: {
         numberOfGenerations: 9000
+      },
+      psotree: {
+        comparisons: 9000,
+        divisions: MOEAD_DIVISIONS[instance.problem],
+        w: 0.5,
+        c1: 1,
+        c2: 1.5,
+        maxVertices: net.graph.size().vertices,
+        maxEdges: getMaxEdges(net.graph),
+        makeValid: function (graph) {
+          return moea.problem.prm.recombination.similarityCrossover.reconnectGraphInTree(graph, net.graph, net.root, net.destinations, moea.problem.prm.recombination.heuristic.random);
+        }
+        // combine: function (a, b, c) {
+        //   a.merge(b).merge(c);
+        //   a.removeCycles(net.root);
+        //   a.prune(net.root, net.destinations);
+        //   return a;
+        // }
+        // combine: function (a, b, c) {
+        //   return mixedCrossover(mixedCrossover(a, b)[0], c)[0];
+        // }
+        // combine: function (personalBest, localBest, globalBest) {
+        //   return moea.problem.prm.recombination.pathCrossover.moveParticle(personalBest, localBest, globalBest, 0.333, 0.333, 0.333, net.root, net.destinations);
+        // }
       }
     };
 

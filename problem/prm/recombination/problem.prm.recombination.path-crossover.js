@@ -10,8 +10,8 @@
 
   function crossover(a, b, root, destinations) {
     var branchesA = a.getBranches(root, destinations),
-        branchesB = b.getBranches(root, destinations),
-        graph = new moea.help.Graph();
+      branchesB = b.getBranches(root, destinations),
+      graph = new moea.help.Graph();
 
     if (window.debugCross) {
       moea.help.graphDesigner.draw(a, root, destinations, window.debugWeightMatrix, window.debugWeights, window.evalData, 'P1');
@@ -44,8 +44,33 @@
     return [graph];
   }
 
+  function moveParticle(personalBest, localBest, globalBest, w, c1, c2, root, destinations) {
+    var branchesPersonal = personalBest.getBranches(root, destinations),
+        branchesLocal = localBest.getBranches(root, destinations),
+        branchesGlobal = globalBest.getBranches(root, destinations),
+        branches = [branchesPersonal, branchesLocal, branchesGlobal],
+        quantities = _.map([w * destinations.length, c1 * destinations.length, c2 * destinations.length], Math.round),
+        graph = new moea.help.Graph(),
+        overflow = destinations.length - _.sum(quantities);
+
+    quantities[_.random(0, 2)] += overflow;
+
+    _.forEach(destinations, function (dest) {
+      var options = [], branch;
+      for (let i = 0; i < quantities.length; i++) {if (quantities[i]) options.push(i)}
+      branch = _.sample(options);
+      graph.createPath(branches[branch][dest]);
+      quantities[branch]--;
+    });
+
+    graph.removeCycles(root);
+    graph.prune(root, destinations);
+    return graph;
+  }
+
   window.moea = window.moea || {};
   _.set(moea, 'problem.prm.recombination.pathCrossover', {
-    crossover: crossover
+    crossover: crossover,
+    moveParticle: moveParticle
   });
 }());

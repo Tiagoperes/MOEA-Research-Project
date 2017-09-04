@@ -80,6 +80,7 @@
   window.moea = window.moea || {};
   _.set(moea, 'method.spea.selection', {
     selectArchive: selectArchive,
-    isNonDominated: isNonDominated
+    isNonDominated: isNonDominated,
+    truncateArchive: truncateArchive
   });
 }());
