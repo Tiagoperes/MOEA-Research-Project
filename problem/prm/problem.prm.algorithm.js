@@ -51,7 +51,9 @@
     aemmt: moea.method.aemmt.main.execute,
     aemmtf: moea.method.aemmt.main.execute,
     aemmd: moea.method.aemmd.main.execute,
-    psotree: moea.method.psotree.main.execute
+    psotree: moea.method.psotree.main.execute,
+    moacs: moea.method.moacs.main.execute,
+    mmmas: moea.method.mmmas.main.execute
   };
 
   function getConfig(method, instance) {
@@ -99,6 +101,36 @@
       }
       return max;
     }
+
+    var max = {cost: -Infinity, delay: -Infinity, traffic: -Infinity, capacity: -Infinity},
+        min = {cost: Infinity, delay: Infinity, traffic: Infinity, capacity: Infinity};
+
+    _.forEach(net.weights, function (weightList) {
+      _.forEach(weightList, function (weight) {
+        if (weight) {
+          if (weight.cost > max.cost) max.cost = weight.cost;
+          if (weight.delay > max.delay) max.delay = weight.delay;
+          if (weight.traffic > max.traffic) max.traffic = weight.traffic;
+          if (weight.capacity > max.capacity) max.capacity = weight.capacity;
+          if (weight.cost < min.cost) min.cost = weight.cost;
+          if (weight.delay < min.delay) min.delay = weight.delay;
+          if (weight.traffic < min.traffic) min.traffic = weight.traffic;
+          if (weight.capacity < min.capacity) min.capacity = weight.capacity;
+        }
+      });
+    });
+
+    var normalizedWeights = _.cloneDeep(net.weights);
+    _.forEach(normalizedWeights, function (weightList) {
+      _.forEach(weightList, function (weight) {
+        if (weight) {
+          weight.cost = (weight.cost - min.cost) / (max.cost - min.cost);
+          weight.delay = (weight.delay - min.delay) / (max.delay - min.delay);
+          weight.traffic = (weight.traffic - min.traffic) / (max.traffic - min.traffic);
+          weight.capacity = (weight.capacity - min.capacity) / (max.capacity - min.capacity);
+        }
+      });
+    });
 
     var config = {
       global: {
@@ -172,6 +204,42 @@
         // combine: function (personalBest, localBest, globalBest) {
         //   return moea.problem.prm.recombination.pathCrossover.moveParticle(personalBest, localBest, globalBest, 0.333, 0.333, 0.333, net.root, net.destinations);
         // }
+      },
+      moacs: {
+        m: 5,
+        populationSize: 1000,
+        alpha: 1,
+        beta: 2,
+        initialPheromoneValue: 0.9,
+        trailPersistence: 0.3,
+        randomChoiceRate: 0.5,
+        pheromoneBounds: {min: 0.1, max: 0.9},
+        network: net,
+        heuristicFunctions: [
+          function (v, e) { return (1 - normalizedWeights[v][e].cost) || 0.000001; },
+          function (v, e) { return (1 - normalizedWeights[v][e].delay) || 0.000001; },
+          function (v, e) { return (1 - normalizedWeights[v][e].traffic) || 0.000001; },
+          function (v, e) { return (normalizedWeights[v][e].capacity) || 0.000001; }
+        ]
+        // heuristicFunctions: [
+        //   function (v, e) { return 1 / (normalizedWeights[v][e].cost || 0.000001); },
+        //   function (v, e) { return 1 / (normalizedWeights[v][e].delay || 0.000001); },
+        //   function (v, e) { return 1 / (normalizedWeights[v][e].traffic || 0.000001); }
+        // ]
+      },
+      mmmas: {
+        m: 5,
+        alpha: 1,
+        beta: 1,
+        initialPheromoneValue: 1,
+        trailPersistence: 0.6,
+        network: net,
+        heuristicFunctions: [
+          function (v, e) { return (1 - normalizedWeights[v][e].cost) || 0.000001; },
+          function (v, e) { return (1 - normalizedWeights[v][e].delay) || 0.000001; },
+          function (v, e) { return (1 - normalizedWeights[v][e].traffic) || 0.000001; },
+          function (v, e) { return (normalizedWeights[v][e].capacity) || 0.000001; }
+        ]
       }
     };
 
