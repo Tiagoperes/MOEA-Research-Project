@@ -142,7 +142,7 @@
 
     scalarize = _.partial(scalarizeFitness, _, _, evaluationProperty);
     population = createParticles(settings, individuals, weightVectors, scalarize);
-    globalBest = moea.help.pareto.getNonDominatedSet(_.map(population, 'position'), evaluationProperty);
+    globalBest = moea.help.pareto.getNonDominatedSet(_.map(population, 'position'), 'evaluation');
 
     for (let i = 0; i < ngens; i++) {
       ga.logGeneration(i, ngens);

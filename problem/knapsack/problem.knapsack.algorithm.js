@@ -18,7 +18,8 @@
     moeadd: moea.method.moeadd.main.execute,
     aemmt: moea.method.aemmt.main.execute,
     aemmtf: moea.method.aemmt.main.execute,
-    aemmd: moea.method.aemmd.main.execute
+    aemmd: moea.method.aemmd.main.execute,
+    psobinary: moea.method.psobinary.main.execute
   };
 
   function getConfig(method, instance) {
@@ -69,6 +70,13 @@
       },
       aemmd: {
         numberOfGenerations: (instance.items < 100) ? 7500 : 15000
+      },
+      psobinary: {
+        comparisons: (instance.items < 100) ? 15000 : 30000,
+        divisions: MOEAD_DIVISIONS[instance.objectives],
+        w: 0.5,
+        c1: 1,
+        c2: 1.5
       }
     };
 
