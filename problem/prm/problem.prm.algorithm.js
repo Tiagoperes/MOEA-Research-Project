@@ -53,7 +53,8 @@
     aemmd: moea.method.aemmd.main.execute,
     psotree: moea.method.psotree.main.execute,
     moacs: moea.method.moacs.main.execute,
-    mmmas: moea.method.mmmas.main.execute
+    mmmas: moea.method.mmmas.main.execute,
+    maco4: moea.method.maco4.main.execute
   };
 
   function getConfig(method, instance) {
@@ -239,6 +240,28 @@
           function (v, e) { return (1 - normalizedWeights[v][e].delay) || 0.000001; },
           function (v, e) { return (1 - normalizedWeights[v][e].traffic) || 0.000001; },
           function (v, e) { return (normalizedWeights[v][e].capacity) || 0.000001; }
+        ]
+      },
+      maco4: {
+        alpha: 1,
+        beta: 2,
+        initialPheromoneValue: 0.9,
+        trailPersistence: 0.3,
+        pheromoneBounds: {min: 0.1, max: 0.9},
+        network: net,
+        heuristicFunctions: [
+          function (v, e) {
+            return (1 - normalizedWeights[v][e].cost) || 0.000001;
+          },
+          function (v, e) {
+            return (1 - normalizedWeights[v][e].delay) || 0.000001;
+          },
+          function (v, e) {
+            return (1 - normalizedWeights[v][e].traffic) || 0.000001;
+          },
+          function (v, e) {
+            return (normalizedWeights[v][e].capacity) || 0.000001;
+          }
         ]
       }
     };

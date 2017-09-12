@@ -42,7 +42,7 @@
         worst = problemSettings.getWorst(),
         uniqueInOS = _.uniqWith(_.map(solutions, _.partial(moea.help.pareto.getSolutionInObjectiveSpace, _, objectives, true)), _.isEqual);
 
-    // checkSolutions(solutions, instance);
+    checkSolutions(solutions, instance);
 
     if (window.debugResult) {
       let us = _.uniqWith(solutions, function (a, b) {
