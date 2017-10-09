@@ -243,8 +243,10 @@
         ]
       },
       maco4: {
-        alpha: 1,
-        beta: 2,
+        // populationSize: 1,
+        // numberOfGenerations: 9000,
+        alpha: 1.5,
+        beta: 1,
         initialPheromoneValue: 0.9,
         trailPersistence: 0.3,
         pheromoneBounds: {min: 0.1, max: 0.9},
@@ -255,13 +257,13 @@
           },
           function (v, e) {
             return (1 - normalizedWeights[v][e].delay) || 0.000001;
-          },
-          function (v, e) {
-            return (1 - normalizedWeights[v][e].traffic) || 0.000001;
-          },
-          function (v, e) {
-            return (normalizedWeights[v][e].capacity) || 0.000001;
           }
+          // function (v, e) {
+          //   return (1 - normalizedWeights[v][e].traffic) || 0.000001;
+          // },
+          // function (v, e) {
+          //   return (normalizedWeights[v][e].capacity) || 0.000001;
+          // }
         ]
       }
     };

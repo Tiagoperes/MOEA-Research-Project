@@ -18,59 +18,24 @@
   function getHeuristic(sourceVertex, targetVertex, settings) {
     return _.sumBy(settings.heuristicFunctions, function (heuristic) {
       return heuristic(sourceVertex, targetVertex);
-    }) / settings.heuristicFunctions.length;
-
-    // return _.sample(settings.heuristicFunctions)(sourceVertex, targetVertex);
+    });
   }
 
   function calculateProbabilities(possibilities, pheromones, settings) {
     var probabilitySum = 0;
 
     _.forEach(possibilities, function (possibility) {
-      // if (!possibility.probabilityTerm) {
+      if (!possibility.probabilityTerm) {
         let pheromone = Math.pow(_.sample(pheromones).values[possibility.parent][possibility.vertex], settings.alpha);
         let heuristic = Math.pow(getHeuristic(possibility.parent, possibility.vertex, settings), settings.beta);
         possibility.probabilityTerm = pheromone * heuristic;
-      // }
+      }
       probabilitySum += possibility.probabilityTerm;
     });
     _.forEach(possibilities, function (possibility) {
       possibility.probability = possibility.probabilityTerm / probabilitySum;
     });
   }
-
-  // function buildTree(pheromones, settings) {
-  //   var graph = settings.network.graph,
-  //       root = settings.network.root,
-  //       destinations = _.clone(settings.network.destinations),
-  //       tree = new moea.help.Graph(),
-  //       explore = _.map(graph.getEdges(root), function (v) {return {parent: root, vertex: v}}),
-  //       isVisited = [];
-  //
-  //   isVisited[settings.network.root] = true;
-  //
-  //   while(destinations.length && explore.length) {
-  //     var sample = explore;
-  //     calculateProbabilities(sample, pheromones, settings);
-  //     let chosen = randomizeAccordingToProbabilities(sample);
-  //     _.pull(explore, chosen);
-  //     if (!isVisited[chosen.vertex]) {
-  //       isVisited[chosen.vertex] = true;
-  //       _.pull(destinations, chosen.vertex);
-  //       tree.createEdge(chosen.parent, chosen.vertex);
-  //       window.visited++;
-  //       _.forEach(graph.getEdges(chosen.vertex), function (v) {
-  //         explore.push({parent: chosen.vertex, vertex: v});
-  //       });
-  //     }
-  //   }
-  //
-  //   tree.prune(settings.network.root, settings.network.destinations);
-  //   if (Math.random() < settings.mutation.rate) {
-  //     tree = settings.mutation.method(tree);
-  //   }
-  //   return tree;
-  // }
 
   function buildTree(pheromones, settings) {
     var graph = settings.network.graph,
@@ -86,11 +51,9 @@
     });
 
     while(destinations.length && explore.length) {
-      var sample = _.sampleSize(explore, 4);
-      calculateProbabilities(sample, pheromones, settings);
-      let chosen = _.maxBy(sample, 'probability');
+      calculateProbabilities(explore, pheromones, settings);
+      let chosen = randomizeAccordingToProbabilities(explore);
       tree.createEdge(chosen.parent, chosen.vertex);
-      window.visited++;
       _.pull(destinations, chosen.vertex);
       _.pull(explore, chosen);
       // pheromones[chosen.parent][chosen.vertex] *= 1 - settings.trailPersistence;
@@ -106,16 +69,20 @@
 
     tree.prune(settings.network.root, settings.network.destinations);
     // moea.help.graphDesigner.draw(tree, settings.network.root, settings.network.destinations);
-    // if (Math.random() < settings.mutation.rate) {
-    //   tree = settings.mutation.method(tree);
-    // }
+    if (Math.random() < settings.mutation.rate) {
+      tree = settings.mutation.method(tree);
+    }
     return tree;
   }
 
-  function buildSolutions(populationSize, pheromones, settings) {
+  function buildSolutions(populationSize, pheromones, dominationPheromones, settings) {
     var solutions = [];
     for (let i = 0; i < populationSize; i++) {
-      let tree = buildTree([_.maxBy(_.sampleSize(pheromones,3), 'score'), _.maxBy(_.sampleSize(pheromones,3), 'score')], settings);
+      var candidates = _.clone(pheromones);
+      var table1 = _.maxBy(_.sampleSize(candidates, 4), 'score');
+      _.pull(candidates, table1);
+      var table2 = _.maxBy(_.sampleSize(candidates, 4), 'score');
+      let tree = buildTree([table1, table2, dominationPheromones], settings);
       solutions.push({
         solution: tree,
         evaluation: moea.help.pareto.getSolutionInObjectiveSpace(tree, settings.objectives)
@@ -151,6 +118,14 @@
     return tables;
   }
 
+  function updateArchive(archive, solutions) {
+    var newArchive = archive;
+    _.forEach(solutions, function (sol) {
+      newArchive = moea.help.pareto.updateNonDominatedSet(newArchive, sol, 'evaluation');
+    });
+    return newArchive;
+  }
+
   function evaporatePheromones(pheromones, trailPersistence, minPheromoneValue) {
     for (let i = 0; i < pheromones.length; i++) {
       for (let j = 0; j < pheromones[i].length; j++) {
@@ -160,12 +135,19 @@
     }
   }
 
-  function applyWeightMaskToIndividual(individual, weights) {
-    var result = [];
-    for (let i = 0; i < weights.length; i++) {
-      if (weights[i]) result.push(individual.evaluation[i]);
-    }
-    return result;
+  function updatePheromones(pheromoneTables, iterationBests, globalBests, trailPersistence, pheromoneBounds) {
+    _.forEach(pheromoneTables, function (pheromones, index) {
+      var pheromoneDeposit = trailPersistence / (1 + iterationBests[index].fitness - globalBests[index].fitness);
+      var vertices = iterationBests[index].solution.getVertices();
+      evaporatePheromones(pheromones.values, trailPersistence, pheromoneBounds.min);
+      _.forEach(vertices, function (v) {
+        var edges = iterationBests[index].solution.getEdges(v);
+        _.forEach(edges, function (e) {
+          pheromones.values[v][e] += pheromoneDeposit;
+          if (pheromones.values[v][e] > pheromoneBounds.max) pheromones.values[v][e] = pheromoneBounds.max;
+        });
+      });
+    });
   }
 
   function getBestsByTables(population, tables) {
@@ -173,8 +155,11 @@
 
     for (let i = 0; i < population.length; i++) {
       for (let j = 0; j < tables.length; j++) {
-        bests[j] = bests[j] || [];
-        bests[j] = moea.help.pareto.updateNonDominatedSet(bests[j], population[i], _.partial(applyWeightMaskToIndividual, _, tables[j].weights));
+        var fitness = _.weightedSum(population[i].normalizedEvaluation, tables[j].weights);
+        if (!bests[j] || fitness < bests[j].fitness) {
+          bests[j] = _.clone(population[i]);
+          bests[j].fitness = fitness;
+        }
       }
     }
 
@@ -183,19 +168,14 @@
 
   function updateBestsByTables(currentBests, newBests, tables) {
     for (let i = 0; i < tables.length; i++) {
-      currentBests[i] = currentBests[i] || [];
-      for (let j = 0; j < newBests[i].length; j++) {
-        let prevBest = currentBests[i];
-        currentBests[i] = moea.help.pareto.updateNonDominatedSet(currentBests[i], newBests[i][j], _.partial(applyWeightMaskToIndividual, _, tables[i].weights));
-        if (currentBests[i] !== prevBest) {
-          tables[i].score++;
-        }
+      if (!currentBests[i] || newBests[i].fitness < currentBests[i].fitness) {
+        currentBests[i] = newBests[i];
       }
     }
   }
 
-  function updatePheromones(pheromones, population, trailPersistence, pheromoneBounds) {
-    _.forEach(population, function (individual) {
+  function updateDominationPheromones(pheromones, archive, trailPersistence, pheromoneBounds) {
+    _.forEach(archive, function (individual) {
       var pheromoneDeposit = trailPersistence;
       var vertices = individual.solution.getVertices();
       evaporatePheromones(pheromones, trailPersistence, pheromoneBounds.min);
@@ -210,18 +190,21 @@
   }
 
   function maco4(settings) {
-    var graphSize = settings.network.graph.size().vertices,
+    var norm = moea.help.normalization,
+        graphSize = settings.network.graph.size().vertices,
         pheromoneTables = createPheromoneTables(settings.objectives.length, graphSize, settings.initialPheromoneValue),
-        globalBests = [];
+        dominationPheromones = createPheromoneTable(null, settings.network.graph.size().vertices, settings.initialPheromoneValue),
+        archive = [],
+        globalBests = [],
+        extremes = norm.initializeExtremes(settings.objectives.length);
 
     for (let i = 0; i < settings.numberOfGenerations; i++) {
-      window.visited = 0;
       moea.method.ga.logGeneration(i, settings.numberOfGenerations);
-      let solutions = buildSolutions(settings.populationSize, pheromoneTables, settings);
-      // if (i % 20 === 0) {
-      //   pheromoneTables = createPheromoneTables(settings.objectives.length, graphSize, settings.initialPheromoneValue);
-      // }
-
+      let solutions = buildSolutions(settings.populationSize, pheromoneTables, dominationPheromones, settings);
+      if (i % 20 === 0) {
+        pheromoneTables = createPheromoneTables(settings.objectives.length, graphSize, settings.initialPheromoneValue);
+        dominationPheromones = createPheromoneTable(null, settings.network.graph.size().vertices, settings.initialPheromoneValue);
+      }
       // let uniq = _.uniqWith(solutions, function (a, b) {
       //   return _.isEqual(a.evaluation, b.evaluation);
       // });
@@ -234,17 +217,23 @@
       // console.log('min 2nd objective: ' + min2nd);
       // console.log('min 3rd objective: ' + min3rd + '\n------------------');
 
+      norm.normalize([], _.concat(solutions, globalBests), extremes);
       let iterationBests = getBestsByTables(solutions, pheromoneTables);
       updateBestsByTables(globalBests, iterationBests, pheromoneTables);
-      // evaporatePheromones(pheromoneTables, settings.trailPersistence, settings.pheromoneBounds.min);
-      _.forEach(pheromoneTables, function (table, index) {
-        updatePheromones(table.values, iterationBests[index], settings.trailPersistence, settings.pheromoneBounds);
+      var newArchive = updateArchive(archive, solutions);
+      var newNDSolutions = _.difference(newArchive, archive);
+      archive = newArchive;
+      _.forEach(globalBests, function (individual, index) {
+        var isNewNDSol = !!_.find(newNDSolutions, function (ndSol) {
+          return _.isEqual(ndSol.evaluation, individual.evaluation);
+        });
+        if (isNewNDSol) pheromoneTables[index].score++;
       });
-
-      // console.log(window.visited);
+      updatePheromones(pheromoneTables, iterationBests, globalBests, settings.trailPersistence, settings.pheromoneBounds);
+      updateDominationPheromones(dominationPheromones.values, archive, settings.trailPersistence, settings.pheromoneBounds);
     }
 
-    return _.map(_.last(globalBests), 'solution');
+    return _.map(archive, 'solution');
   }
 
   window.moea = window.moea || {};

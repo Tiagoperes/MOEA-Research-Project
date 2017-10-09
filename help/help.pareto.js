@@ -4,6 +4,7 @@
   function dominates(p, q, objectives) {
     if (objectives && objectives instanceof Array) return dominatesObjectives(p, q, objectives);
     if (typeof objectives === 'string') return dominatesProperty(p, q, objectives);
+    if (typeof objectives === 'function') return dominatesArray(objectives(p), objectives(q));
     return dominatesArray(p, q);
   }
 
