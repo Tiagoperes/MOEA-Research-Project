@@ -36,50 +36,69 @@
     return invalid === 0;
   };
 
+  // function getMetricsForMethod(method, instance, problemSettings) {
+  //   var solutions = problemSettings.runAlgorithm(method, instance),
+  //       objectives = problemSettings.getObjectives(instance),
+  //       worst = problemSettings.getWorst(),
+  //       uniqueInOS = _.uniqWith(_.map(solutions, _.partial(moea.help.pareto.getSolutionInObjectiveSpace, _, objectives, true)), _.isEqual);
+  //
+  //   checkSolutions(solutions, instance);
+  //
+  //   if (window.debugResult) {
+  //     let us = _.uniqWith(solutions, function (a, b) {
+  //       return _.isEqual(moea.help.pareto.getSolutionInObjectiveSpace(a, objectives), moea.help.pareto.getSolutionInObjectiveSpace(b, objectives));
+  //     });
+  //     _.forEach(us, function (sol) {
+  //       // var os = moea.help.pareto.getSolutionInObjectiveSpace(sol, objectives);
+  //       // os[0] = parseFloat((os[0]).toFixed(9));
+  //       // os[1] = parseFloat((os[1]).toFixed(9));
+  //       // os[5] = parseFloat((os[5]).toFixed(3));
+  //       // if (_.isEqual(os, [0.408172294, 0.652212389, 264, 74, 51, 32.486]) || _.isEqual(os, [0.41322128, 0.652212389, 251, 74, 51, 32.757])) {
+  //       //   window.weird = window.weird || [];
+  //       //   window.weird.push(sol);
+  //         moea.help.graphDesigner.draw(sol, instance.network.root, instance.network.destinations, window.debugWeightMatrix, window.debugWeights, window.evalData);
+  //       // }
+  //     });
+  //   }
+  //
+  //   console.log(uniqueInOS);
+  //
+  //   return moea.help.report.getMetrics(uniqueInOS, instance.pareto, worst);
+  // }
+
   function getMetricsForMethod(method, instance, problemSettings) {
-    var solutions = problemSettings.runAlgorithm(method, instance),
+    var runAlgorithm =  Promise.resolve(problemSettings.runAlgorithm(method, instance)),
         objectives = problemSettings.getObjectives(instance),
-        worst = problemSettings.getWorst(),
-        uniqueInOS = _.uniqWith(_.map(solutions, _.partial(moea.help.pareto.getSolutionInObjectiveSpace, _, objectives, true)), _.isEqual);
+        worst = problemSettings.getWorst();
 
-    checkSolutions(solutions, instance);
-
-    if (window.debugResult) {
-      let us = _.uniqWith(solutions, function (a, b) {
-        return _.isEqual(moea.help.pareto.getSolutionInObjectiveSpace(a, objectives), moea.help.pareto.getSolutionInObjectiveSpace(b, objectives));
-      });
-      _.forEach(us, function (sol) {
-        // var os = moea.help.pareto.getSolutionInObjectiveSpace(sol, objectives);
-        // os[0] = parseFloat((os[0]).toFixed(9));
-        // os[1] = parseFloat((os[1]).toFixed(9));
-        // os[5] = parseFloat((os[5]).toFixed(3));
-        // if (_.isEqual(os, [0.408172294, 0.652212389, 264, 74, 51, 32.486]) || _.isEqual(os, [0.41322128, 0.652212389, 251, 74, 51, 32.757])) {
-        //   window.weird = window.weird || [];
-        //   window.weird.push(sol);
-          moea.help.graphDesigner.draw(sol, instance.network.root, instance.network.destinations, window.debugWeightMatrix, window.debugWeights, window.evalData);
-        // }
-      });
-    }
-
-    console.log(uniqueInOS);
-
-    return moea.help.report.getMetrics(uniqueInOS, instance.pareto, worst);
+    return runAlgorithm.then(function (solutions) {
+      var uniqueInOS = _.uniqWith(_.map(solutions, _.partial(moea.help.pareto.getSolutionInObjectiveSpace, _, objectives, true)), _.isEqual);
+      checkSolutions(solutions, instance);
+      return moea.help.report.getMetrics(uniqueInOS, instance.pareto, worst);
+    });
   }
 
+  // function updateMetricsWithOneMoreRun(metrics, method, instance, progress, dbName, problemSettings) {
+  //   try {
+  //     metrics.push(getMetricsForMethod(method, instance, problemSettings));
+  //     progress.next();
+  //     return metrics;
+  //   } catch (error) {
+  //     // if (error instanceof moea.help.pareto.IncompleteParetoException) {
+  //     //   console.log(error.solutions.length + ' new solutions found. Updating Pareto and restarting experiment.');
+  //     //   problemSettings.saveToParetoDB(instance, error.solutions);
+  //     //   progress.reset();
+  //     //   return moea.help.database.create(dbName, true);
+  //     // }
+  //     throw error;
+  //   }
+  // }
+
   function updateMetricsWithOneMoreRun(metrics, method, instance, progress, dbName, problemSettings) {
-    try {
-      metrics.push(getMetricsForMethod(method, instance, problemSettings));
+    return getMetricsForMethod(method, instance, problemSettings).then(function (result) {
+      metrics.push(result);
       progress.next();
-      return metrics;
-    } catch (error) {
-      // if (error instanceof moea.help.pareto.IncompleteParetoException) {
-      //   console.log(error.solutions.length + ' new solutions found. Updating Pareto and restarting experiment.');
-      //   problemSettings.saveToParetoDB(instance, error.solutions);
-      //   progress.reset();
-      //   return moea.help.database.create(dbName, true);
-      // }
-      throw error;
-    }
+    });
   }
 
   function verifyUnsavedPareto(instance, shouldRaiseException, problemSettings) {
@@ -109,8 +128,39 @@
     });
   }
 
+  // function run(method, instance, numberOfExecutions, shouldReset, dbName, problemSettings) {
+  //   var metrics, progress, report;
+  //
+  //   checkInputForRun(problemSettings);
+  //
+  //   metrics = moea.help.database.create(dbName, shouldReset);
+  //   progress = moea.help.progress.create(numberOfExecutions);
+  //
+  //   verifyUnsavedPareto(instance, true, problemSettings);
+  //   if (numberOfExecutions > 1) moea.method.ga.deactivateLog();
+  //   progress.next(metrics.length);
+  //
+  //   while (!progress.isComplete()) {
+  //     metrics = updateMetricsWithOneMoreRun(metrics, method, instance, progress, dbName, problemSettings);
+  //   }
+  //
+  //   report = moea.help.report.createReport(metrics);
+  //   printReport(report);
+  //   verifyUnsavedPareto(instance, false, problemSettings);
+  //   return report;
+  // }
+  //
+
+  function metricsLoop(method, progress, metrics, instance, dbName, problemSettings) {
+    if (!progress.isComplete()) {
+      return updateMetricsWithOneMoreRun(metrics, method, instance, progress, dbName, problemSettings).then(function () {
+        metricsLoop(method, progress, metrics, instance, dbName, problemSettings);
+      });
+    }
+  }
+
   function run(method, instance, numberOfExecutions, shouldReset, dbName, problemSettings) {
-    var metrics, progress, report;
+    var metrics, progress, report, time = new Date().getTime();
 
     checkInputForRun(problemSettings);
 
@@ -121,14 +171,12 @@
     if (numberOfExecutions > 1) moea.method.ga.deactivateLog();
     progress.next(metrics.length);
 
-    while (!progress.isComplete()) {
-      metrics = updateMetricsWithOneMoreRun(metrics, method, instance, progress, dbName, problemSettings);
-    }
-
-    report = moea.help.report.createReport(metrics);
-    printReport(report);
-    verifyUnsavedPareto(instance, false, problemSettings);
-    return report;
+    metricsLoop(method, progress, metrics, instance, dbName, problemSettings).then(function () {
+      report = moea.help.report.createReport(metrics);
+      printReport(report);
+      verifyUnsavedPareto(instance, false, problemSettings);
+      console.log('Time taken for each execution: ' + ((new Date().getTime() - time) / (numberOfExecutions * 1000)) + 's');
+    });
   }
 
   function checkInputForGetFormattedResults(input) {

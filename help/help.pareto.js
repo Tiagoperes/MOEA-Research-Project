@@ -71,6 +71,10 @@
       return _.isEqual(_.get(p, objectives), _.get(q, objectives));
     }
 
+    if (typeof objectives === 'function') {
+      return _.isEqual(objectives(p), objectives(q));
+    }
+
     return _.isEqual(p, q);
   }
 
@@ -118,7 +122,7 @@
   UnsavedParetoException.prototype.constructor = UnsavedParetoException;
 
 
-  window.moea = window.moea || {};
+  self.moea = self.moea || {};
   _.set(moea, 'help.pareto', {
     dominates: dominates,
     isDominatedBySet: isDominatedBySet,

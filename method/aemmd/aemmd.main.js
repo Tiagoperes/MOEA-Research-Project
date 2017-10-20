@@ -64,7 +64,8 @@
     var ga = moea.method.ga,
         tables = createTables(settings.objectives),
         population = ga.generateRandomPopulation(settings.elementsPerTable * tables.length, settings.randomize, settings.objectives),
-        tableInvolvingAllObjectives = _.last(tables);
+        tableInvolvingAllObjectives = _.last(tables),
+        buildTime = 0, updateTime = 0;
 
     updateTablesWithPopulation(tables, population);
 
@@ -73,10 +74,16 @@
         ga.logGeneration(i, settings.numberOfGenerations);
       }
       let parents = selectParents(tables);
+      let t = new Date().getTime();
       let children = crossover(parents, settings);
+      buildTime += new Date().getTime() - t;
+      t = new Date().getTime();
       updateTablesWithPopulation(tables, children);
+      updateTime += new Date().getTime() - t;
     }
 
+    console.log('build time: ' + (buildTime / 1000) + 's');
+    console.log('update time: ' + (updateTime / 1000) + 's');
     return _.map(tableInvolvingAllObjectives.population, 'solution');
   }
 

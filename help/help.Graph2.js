@@ -73,7 +73,7 @@
     };
 
     this.getEdges = function (vertex) {
-      return data[vertex];
+      return _.clone(data[vertex]);
     };
 
     this.size = function () {
@@ -215,7 +215,7 @@
         explore = _.concat(explore, data[node]);
       }
     };
-    
+
     this.prune = function (root, destinations) {
       var nonDestinationLeafs;
 
@@ -256,7 +256,7 @@
     initialize();
   }
 
-  window.moea = window.moea || {};
+  self.moea = self.moea || {};
   _.set(moea, 'help.Graph', Graph);
 
 }());

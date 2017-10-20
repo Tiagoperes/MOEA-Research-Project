@@ -54,7 +54,8 @@
     psotree: moea.method.psotree.main.execute,
     moacs: moea.method.moacs.main.execute,
     mmmas: moea.method.mmmas.main.execute,
-    maco4: moea.method.maco4.main.execute
+    mdtAco: moea.method.mdtAco.main.execute,
+    mdtAcoParallel: moea.method.mdtAcoParallel.main.execute
   };
 
   function getConfig(method, instance) {
@@ -133,6 +134,30 @@
       });
     });
 
+    function buildHeuristicTables() {
+      var tables = [];
+
+      for (let i = 0; i < 4; i++) {
+        tables[i] = [];
+        for (let j = 0; j < normalizedWeights.length; j++) {
+          tables[i][j] = [];
+        }
+      }
+
+      for (let i = 0; i < normalizedWeights.length; i++) {
+        for (let j = 0; j < normalizedWeights[i].length; j++) {
+          if (normalizedWeights[i][j]) {
+            tables[0][i][j] = (1 - normalizedWeights[i][j].cost) || 0.000001;
+            tables[1][i][j] = (1 - normalizedWeights[i][j].delay) || 0.000001;
+            tables[2][i][j] = (1 - normalizedWeights[i][j].traffic) || 0.000001;
+            tables[3][i][j] = normalizedWeights[i][j].capacity || 0.000001;
+          }
+        }
+      }
+
+      return tables;
+    }
+
     var config = {
       global: {
         populationSize: 90,
@@ -180,7 +205,7 @@
         numberOfGenerations: 9000
       },
       aemmd: {
-        numberOfGenerations: 9000
+        numberOfGenerations: 900
       },
       psotree: {
         comparisons: 9000,
@@ -242,11 +267,11 @@
           function (v, e) { return (normalizedWeights[v][e].capacity) || 0.000001; }
         ]
       },
-      maco4: {
+      mdtAco: {
         // populationSize: 1,
         // numberOfGenerations: 9000,
-        alpha: 1.5,
-        beta: 1,
+        alpha: 1,
+        beta: 1.9,
         initialPheromoneValue: 0.9,
         trailPersistence: 0.3,
         pheromoneBounds: {min: 0.1, max: 0.9},
@@ -257,14 +282,25 @@
           },
           function (v, e) {
             return (1 - normalizedWeights[v][e].delay) || 0.000001;
+          },
+          function (v, e) {
+            return (1 - normalizedWeights[v][e].traffic) || 0.000001;
+          },
+          function (v, e) {
+            return (normalizedWeights[v][e].capacity) || 0.000001;
           }
-          // function (v, e) {
-          //   return (1 - normalizedWeights[v][e].traffic) || 0.000001;
-          // },
-          // function (v, e) {
-          //   return (normalizedWeights[v][e].capacity) || 0.000001;
-          // }
         ]
+      },
+      mdtAcoParallel: {
+        // populationSize: 22,
+        // numberOfGenerations: 1,
+        alpha: 1,
+        beta: 1.9,
+        initialPheromoneValue: 0.9,
+        trailPersistence: 0.3,
+        pheromoneBounds: {min: 0.1, max: 0.9},
+        network: net,
+        heuristicTables: buildHeuristicTables()
       }
     };
 
