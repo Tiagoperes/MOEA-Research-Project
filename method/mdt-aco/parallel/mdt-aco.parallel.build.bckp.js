@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var params, pheromoneTables;
+  var params;
 
   function randomizeAccordingToProbabilities(set) {
     var ordered = _.orderBy(set, 'probability'),
@@ -23,12 +23,12 @@
     }) / heuristics.length;
   }
 
-  function calculateProbabilities(possibilities, tableIndex, pheromones, alpha, beta, heuristics) {
+  function calculateProbabilities(possibilities, pheromones, alpha, beta, heuristics) {
     var probabilitySum = 0;
 
     _.forEach(possibilities, function (possibility) {
       if (!possibility.probabilityTerm) {
-        let pheromone = Math.pow(pheromones.getValue(tableIndex, possibility.parent, possibility.vertex), alpha);
+        let pheromone = Math.pow(pheromones.values[possibility.parent][possibility.vertex], alpha);
         let heuristic = Math.pow(getHeuristic(possibility.parent, possibility.vertex, heuristics), beta);
         possibility.probabilityTerm = pheromone * heuristic;
       }
@@ -39,7 +39,7 @@
     });
   }
 
-  function buildTree(tableIndex, pheromones, sampleSize, graph, root, destinations, alpha, beta, heuristics) {
+  function buildTree(pheromones, sampleSize, graph, root, destinations, alpha, beta, heuristics) {
     var tree = new moea.help.Graph(),
         vertices = [],
         explore = [],
@@ -58,10 +58,7 @@
 
     while(destinationsToReach.length && explore.length) {
       let sample = _.sampleSize(explore, sampleSize);
-      if (!pheromones.getValue) {
-        debugger;
-      }
-      calculateProbabilities(sample, tableIndex, pheromones, alpha, beta, heuristics);
+      calculateProbabilities(sample, pheromones, alpha, beta, heuristics);
       let chosen = randomizeAccordingToProbabilities(sample);
       _.pull(explore, chosen);
       if (!chosen.isVisited) {
@@ -74,7 +71,7 @@
             vertices[v].parent = chosen.vertex;
           } else if (!vertices[v].isVisited) {
             let options = [vertices[v], {parent: chosen.vertex, vertex: v}];
-            calculateProbabilities(options, tableIndex, pheromones, alpha, beta, heuristics);
+            calculateProbabilities(options, pheromones, alpha, beta, heuristics);
             let node = randomizeAccordingToProbabilities(options);
             vertices[v].parent = node.parent;
             vertices[v].probabilityTerm = node.probabilityTerm;
@@ -93,34 +90,26 @@
   function buildSolutions(populationSize, pheromones, sampleSize, graph, root, destinations, alpha, beta, heuristics) {
     var population = [];
     for (let i = 0; i < populationSize; i++) {
-      population.push(buildTree(i % pheromones.getNumberOfTables(), pheromones, sampleSize, graph, root, destinations,
-        alpha, beta, heuristics));
+      population.push(buildTree(pheromones[i % pheromones.length], sampleSize, graph, root, destinations, alpha, beta,
+        heuristics));
     }
     return population;
   }
 
   importScripts(
     '../../../lib/lodash.js',
-    '../../../lib/seedrandom.js',
-    '../../../lib/seedrandom.fix.js',
     '../../../help/help.pareto.js',
-    '../../../help/help.Graph2.js',
-    'mdt-aco.parallel.Pheromones.js'
+    '../../../help/help.Graph2.js'
   );
 
   onmessage = function (e) {
-    if (e.data === 'run') {
-      postMessage(JSON.stringify(buildSolutions(params.populationSize, pheromoneTables, params.sampleSize,
-        params.graph, params.root, params.destinations, params.alpha, params.beta,
-        params.heuristics)));
-    } else if (e.data instanceof SharedArrayBuffer) {
-      pheromoneTables = new moea.method.mdtAcoParallel.Pheromones(params.weights, params.graph.size().vertices, e.data);
-    } else if (typeof e.data === 'number') {
-      Math.seedrandom(e.data);
+    var data = JSON.parse(e.data);
+    if (data.initialization) {
+      params = data;
     } else {
-      params = JSON.parse(e.data);
-      Math.seedrandom(params.seed);
-      params.graph = new moea.help.Graph(params.graph);
+      postMessage(JSON.stringify(buildSolutions(params.populationSize, data, params.sampleSize,
+        new moea.help.Graph(params.graph), params.root, params.destinations, params.alpha, params.beta,
+        params.heuristics)));
     }
   };
 

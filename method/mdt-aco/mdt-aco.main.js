@@ -3,9 +3,9 @@
 
   function randomizeAccordingToProbabilities(set) {
     var ordered = _.orderBy(set, 'probability'),
-      rand = Math.random(),
-      sum = 0,
-      i = -1;
+        rand = Math.random(),
+        sum = 0,
+        i = -1;
 
     do {
       i++;

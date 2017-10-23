@@ -163,6 +163,7 @@
         populationSize: 90,
         archiveSize: 90,
         numberOfGenerations: 100,
+        numberOfThreads: 4,
         shouldNormalize: true,
         useFilter: true,
         elementsPerTable: 30,
@@ -268,8 +269,8 @@
         ]
       },
       mdtAco: {
-        // populationSize: 1,
-        // numberOfGenerations: 9000,
+        // populationSize: 70,
+        // numberOfGenerations: 5,
         alpha: 1,
         beta: 1.9,
         initialPheromoneValue: 0.9,

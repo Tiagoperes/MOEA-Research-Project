@@ -154,14 +154,16 @@
   function metricsLoop(method, progress, metrics, instance, dbName, problemSettings) {
     if (!progress.isComplete()) {
       return updateMetricsWithOneMoreRun(metrics, method, instance, progress, dbName, problemSettings).then(function () {
-        metricsLoop(method, progress, metrics, instance, dbName, problemSettings);
+        return metricsLoop(method, progress, metrics, instance, dbName, problemSettings);
       });
     }
+    return Promise.resolve();
   }
 
   function run(method, instance, numberOfExecutions, shouldReset, dbName, problemSettings) {
     var metrics, progress, report, time = new Date().getTime();
 
+    console.log('%cseedrandom: using seed "' + Math.getRandomizationSeed() + '". To change, call Math.seedrandom(yourSeed).', 'color: blue');
     checkInputForRun(problemSettings);
 
     metrics = moea.help.database.create(dbName, shouldReset);
@@ -175,7 +177,7 @@
       report = moea.help.report.createReport(metrics);
       printReport(report);
       verifyUnsavedPareto(instance, false, problemSettings);
-      console.log('Time taken for each execution: ' + ((new Date().getTime() - time) / (numberOfExecutions * 1000)) + 's');
+      console.log('Average time taken: ' + ((new Date().getTime() - time) / (numberOfExecutions * 1000)) + 's');
     });
   }
 
