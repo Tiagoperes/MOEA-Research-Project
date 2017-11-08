@@ -103,16 +103,16 @@
     return solutions;
   }
 
-  function createPheromoneTable(weights, size, initialPheromoneValue) {
-    var table = {weights: weights, values: []};
+  function createPheromoneTable(size, initialPheromoneValue) {
+    var table = {values: []};
     for (let i = 0; i < size; i++) {
       table.values[i] = _.fill(new Array(size), initialPheromoneValue);
     }
     return table;
   }
 
-  function createPheromoneTables(numberOfObjectives, numberOfVertices, initialPheromoneValue) {
-    var tables = [],
+  function createWeights(numberOfObjectives) {
+    var result = [],
         objectives = [];
 
     for (let i = 0; i < numberOfObjectives; i++) {
@@ -120,15 +120,14 @@
     }
 
     for (let i = 2; i <= numberOfObjectives; i++) {
-      // tables = _.concat(tables, _.map(_.sampleSize(_.allCombinations(objectives, i), 2), function (objectiveIndexes) {
-      tables = _.concat(tables, _.map(_.allCombinations(objectives, i), function (objectiveIndexes) {
+      _.forEach(_.allCombinations(objectives, i), function (objectiveIndexes) {
         var weights = _.fill(new Array(numberOfObjectives), 0);
         for (let j = 0; j < objectiveIndexes.length; j++) weights[[objectiveIndexes[j]]] = 1;
-        return createPheromoneTable(weights, numberOfVertices, initialPheromoneValue);
-      }));
+        result.push(weights);
+      });
     }
 
-    return tables;
+    return result;
   }
 
   function evaporatePheromones(pheromones, trailPersistence, minPheromoneValue, weight) {
@@ -149,23 +148,23 @@
     return result;
   }
 
-  function updateBestsByTables(bests, population, tables) {
+  function updateBestsByTables(bests, population, weights) {
     for (let i = 0; i < population.length; i++) {
-      for (let j = 0; j < tables.length; j++) {
+      for (let j = 0; j < weights.length; j++) {
         bests[j] = bests[j] || [];
-        bests[j] = moea.help.pareto.updateNonDominatedSet(bests[j], population[i], _.partial(applyWeightMaskToIndividual, _, tables[j].weights));
+        bests[j] = moea.help.pareto.updateNonDominatedSet(bests[j], population[i], _.partial(applyWeightMaskToIndividual, _, weights[j]));
       }
     }
   }
 
   function updatePheromones(pheromones, population, trailPersistence, pheromoneBounds) {
-    evaporatePheromones(pheromones, trailPersistence, pheromoneBounds.min, 1);
+    evaporatePheromones(pheromones, trailPersistence, pheromoneBounds.min, population.length);
     _.forEach(population, function (individual) {
       var vertices = individual.solution.getVertices();
       _.forEach(vertices, function (v) {
         var edges = individual.solution.getEdges(v);
         _.forEach(edges, function (e) {
-          pheromones[v][e] = (1 - trailPersistence) * pheromones[v][e] + trailPersistence;
+          pheromones[v][e] += trailPersistence;
           if (pheromones[v][e] > pheromoneBounds.max) pheromones[v][e] = pheromoneBounds.max;
         });
       });
@@ -228,33 +227,42 @@
 
   function run(settings) {
     var graphSize = settings.network.graph.size().vertices,
-        pheromoneTables = createPheromoneTables(settings.objectives.length, graphSize, settings.initialPheromoneValue),
+        weights = createWeights(settings.objectives.length),
+        pheromoneTables = [createPheromoneTable(graphSize, settings.initialPheromoneValue)],
         iterationBests = [],
         buildSolutionTime = 0,
         updatePheromonesTime = 0,
-        sampleSize = 200;
+        sampleSize = 4,
+        obj = 2,
+        removalPoint = Math.floor(settings.numberOfGenerations / (settings.objectives.length - 1));
 
     for (let i = 0; i < settings.numberOfGenerations; i++) {
       moea.method.ga.logGeneration(i, settings.numberOfGenerations);
 
+      if (i > 0 && i % removalPoint === 0) {
+        while(_.sum(weights[0]) === obj) {
+          weights.shift();
+          iterationBests.shift();
+        }
+        obj++;
+      }
+
       let t = new Date().getTime();
-      // let population = createSolutions(pheromoneTables, sampleSize, settings);
-      let population = moea.method.multiAco.build.buildSolutions(settings.populationSize, pheromoneTables, settings.heuristicFunctions,
-        settings.network.graph, settings.network.root, settings.network.destinations, sampleSize, settings.alpha,
-        settings.beta, settings.objectives);
+      let population = createSolutions(pheromoneTables, sampleSize, settings);
       buildSolutionTime += new Date().getTime() - t;
 
       t = new Date().getTime();
-      updateBestsByTables(iterationBests, population, pheromoneTables);
+      updateBestsByTables(iterationBests, population, weights);
       // truncateBestsByTables(iterationBests, 10);
-      _.forEach(pheromoneTables, function (table, index) {
-        updatePheromones(table.values, iterationBests[index], settings.trailPersistence, settings.pheromoneBounds);
+      _.forEach(pheromoneTables, function (table) {
+        var trees = _.flatten(iterationBests);
+        var g = trees[0].solution.clone();
+        for (let i = 1; i < trees.length; i++) {
+          g.merge(trees[i].solution);
+        }
+        updatePheromones(table.values, [{solution: g}], settings.trailPersistence, settings.pheromoneBounds);
       });
       updatePheromonesTime += new Date().getTime() - t;
-
-      // console.log('max archive size: ' + _.maxBy(_.dropRight(iterationBests), 'length').length);
-      // console.log('min archive size: ' + _.minBy(iterationBests, 'length').length);
-      // console.log('avg archive size: ' + _.mean(_.map(_.dropRight(iterationBests), 'length')));
     }
 
     console.log('build solution time: ' + (buildSolutionTime / 1000) + 's');

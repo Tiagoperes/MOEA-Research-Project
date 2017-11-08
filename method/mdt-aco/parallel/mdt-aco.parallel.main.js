@@ -15,10 +15,11 @@
           weights: pheromones.getWeights()
         });
 
+    msg = msg.slice(0, msg.length - 1);
+
     for (let i = 0; i < numberOfWorkers; i++) {
       let worker = new Worker('method/mdt-aco/parallel/mdt-aco.parallel.build.js');
-      worker.postMessage(Math.random());
-      worker.postMessage(msg);
+      worker.postMessage(msg + ', "seed": ' + Math.random() + ', "offset": ' + (i * antsPerThread) + '}');
       worker.postMessage(pheromones.getSharedBuffer());
       workers.push(worker);
     }

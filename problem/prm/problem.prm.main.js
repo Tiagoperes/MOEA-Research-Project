@@ -171,6 +171,7 @@
     };
     if (!(instance.network.graph instanceof moea.help.Graph)) {
       instance.network.graph = new moea.help.Graph(instance.network.graph);
+      if (network === 8) instance.network.graph.removeDoubleEdges();
     }
     if (!instance.pareto) {
       throw new Error('No Pareto found for problem ' + problem + ' and network ' + network);

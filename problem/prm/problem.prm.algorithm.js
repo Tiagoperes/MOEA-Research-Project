@@ -55,7 +55,11 @@
     moacs: moea.method.moacs.main.execute,
     mmmas: moea.method.mmmas.main.execute,
     mdtAco: moea.method.mdtAco.main.execute,
-    mdtAcoParallel: moea.method.mdtAcoParallel.main.execute
+    mdtAcoParallel: moea.method.mdtAcoParallel.main.execute,
+    prim: moea.method.prim.main.execute,
+    simpleAco: moea.method.simpleAco.main.execute,
+    multiAco: moea.method.multiAco.main.execute,
+    manyAco: moea.method.manyAco.main.execute
   };
 
   function getConfig(method, instance) {
@@ -134,6 +138,28 @@
       });
     });
 
+    var singleObjectiveWeightMatrix = _.map(normalizedWeights, function (weightList) {
+      return _.map(weightList, function (weights) {
+        if (weights === null) return null;
+        return weights.cost * weights.delay;
+      });
+    });
+
+    function singleObjective(tree) {
+      var cost = 0,
+          treeArray = tree.asArray();
+
+      for (let i = 0; i < treeArray.length; i++) {
+        if (treeArray[i]) {
+          for (let j = 0; j < treeArray[i].length; j++) {
+            cost += singleObjectiveWeightMatrix[i][treeArray[i][j]];
+          }
+        }
+      }
+
+      return cost;
+    }
+
     function buildHeuristicTables() {
       var tables = [];
 
@@ -163,7 +189,7 @@
         populationSize: 90,
         archiveSize: 90,
         numberOfGenerations: 100,
-        numberOfThreads: 4,
+        numberOfThreads: 8,
         shouldNormalize: true,
         useFilter: true,
         elementsPerTable: 30,
@@ -206,7 +232,7 @@
         numberOfGenerations: 9000
       },
       aemmd: {
-        numberOfGenerations: 900
+        numberOfGenerations: 9000
       },
       psotree: {
         comparisons: 9000,
@@ -269,28 +295,41 @@
         ]
       },
       mdtAco: {
-        // populationSize: 70,
-        // numberOfGenerations: 5,
+        // populationSize: 7,
+        // numberOfGenerations: 1285,
+        // populationSize: 18,
+        // numberOfGenerations: 50,
         alpha: 1,
         beta: 1.9,
         initialPheromoneValue: 0.9,
         trailPersistence: 0.3,
         pheromoneBounds: {min: 0.1, max: 0.9},
         network: net,
-        heuristicFunctions: [
-          function (v, e) {
-            return (1 - normalizedWeights[v][e].cost) || 0.000001;
-          },
-          function (v, e) {
-            return (1 - normalizedWeights[v][e].delay) || 0.000001;
-          },
-          function (v, e) {
-            return (1 - normalizedWeights[v][e].traffic) || 0.000001;
-          },
-          function (v, e) {
-            return (normalizedWeights[v][e].capacity) || 0.000001;
+        // heuristicFunctions: [
+        //   function (v, e) {
+        //     return (1 - normalizedWeights[v][e].cost) || 0.000001;
+        //   },
+        //   function (v, e) {
+        //     return (1 - normalizedWeights[v][e].delay) || 0.000001;
+        //   },
+        //   function (v, e) {
+        //     return (1 - normalizedWeights[v][e].traffic) || 0.000001;
+        //   },
+        //   function (v, e) {
+        //     return (normalizedWeights[v][e].capacity) || 0.000001;
+        //   }
+        // ]
+        heuristicFunctions: _.map(problemWeights, function (name) {
+          if (name !== 'capacity') {
+            return function (v, e) {
+              return (1 - normalizedWeights[v][e][name]) || 0.000001;
+            };
+          } else {
+            return function (v, e) {
+              return (normalizedWeights[v][e].capacity) || 0.000001;
+            };
           }
-        ]
+        })
       },
       mdtAcoParallel: {
         // populationSize: 22,
@@ -302,14 +341,69 @@
         pheromoneBounds: {min: 0.1, max: 0.9},
         network: net,
         heuristicTables: buildHeuristicTables()
-      }
+      },
+      prim: {
+        network: net,
+        weights: singleObjectiveWeightMatrix,
+        objective: singleObjective
+      },
+      simpleAco: {
+        // numberOfGenerations: 1,
+        // populationSize: 1,
+        alpha: 1,
+        beta: 1.9,
+        initialPheromoneValue: 0.9,
+        evaporationRate: 0.3,
+        pheromoneBounds: {min: 0.1, max: 0.9},
+        network: net,
+        objective: singleObjective,
+        weights: singleObjectiveWeightMatrix,
+        heuristicFunctions: [
+          function (v, e) {
+            return (1 - singleObjectiveWeightMatrix[v][e]) || 0.000001;
+          }
+        ]
+      },
+      multiAco: {
+        // numberOfGenerations: 20,
+        // populationSize: 1,
+        alpha: 1,
+        beta: 1.9,
+        initialPheromoneValue: 0.9,
+        evaporationRate: 0.3,
+        pheromoneBounds: {min: 0.1, max: 0.9},
+        network: net,
+        weights: _.map(problemWeights, function (name) {
+          return _.map(normalizedWeights, function (line) {
+            return _.map(line, function (weight) {
+              if (weight === null) return null;
+              return weight[name];
+            });
+          });
+        }),
+        heuristicFunctions: _.map(problemWeights, function (name) {
+          if (name !== 'capacity') {
+            return function (v, e) {
+              return (1 - normalizedWeights[v][e][name]) || 0.000001;
+            };
+          } else {
+            return function (v, e) {
+              return (normalizedWeights[v][e].capacity) || 0.000001;
+            };
+          }
+        })
+      },
     };
+
+    config.manyAco = config.multiAco;
 
     return _.merge(config.global, config[method]);
   }
 
   function run(method, instance) {
-    return methods[method](getConfig(method, instance));
+    var ans = methods[method](getConfig(method, instance));
+    // moea.help.graphDesigner.draw(ans.solution, instance.network.root, instance.network.destinations);
+    return ans;
   }
 
   window.moea = window.moea || {};

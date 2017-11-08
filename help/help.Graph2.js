@@ -253,6 +253,12 @@
       return branches;
     };
 
+    this.removeDoubleEdges = function () {
+      for (let i = 0; i < data.length; i++) {
+        data[i] = _.uniq(data[i]);
+      }
+    };
+
     initialize();
   }
 

@@ -90,10 +90,10 @@
     return tree.asArray();
   }
 
-  function buildSolutions(populationSize, pheromones, sampleSize, graph, root, destinations, alpha, beta, heuristics) {
+  function buildSolutions(offset, populationSize, pheromones, sampleSize, graph, root, destinations, alpha, beta, heuristics) {
     var population = [];
     for (let i = 0; i < populationSize; i++) {
-      population.push(buildTree(i % pheromones.getNumberOfTables(), pheromones, sampleSize, graph, root, destinations,
+      population.push(buildTree((i + offset) % pheromones.getNumberOfTables(), pheromones, sampleSize, graph, root, destinations,
         alpha, beta, heuristics));
     }
     return population;
@@ -110,13 +110,11 @@
 
   onmessage = function (e) {
     if (e.data === 'run') {
-      postMessage(JSON.stringify(buildSolutions(params.populationSize, pheromoneTables, params.sampleSize,
-        params.graph, params.root, params.destinations, params.alpha, params.beta,
+      postMessage(JSON.stringify(buildSolutions(params.offset, params.populationSize, pheromoneTables,
+        params.sampleSize, params.graph, params.root, params.destinations, params.alpha, params.beta,
         params.heuristics)));
     } else if (e.data instanceof SharedArrayBuffer) {
       pheromoneTables = new moea.method.mdtAcoParallel.Pheromones(params.weights, params.graph.size().vertices, e.data);
-    } else if (typeof e.data === 'number') {
-      Math.seedrandom(e.data);
     } else {
       params = JSON.parse(e.data);
       Math.seedrandom(params.seed);
