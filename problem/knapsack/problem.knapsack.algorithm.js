@@ -19,11 +19,29 @@
     aemmt: moea.method.aemmt.main.execute,
     aemmtf: moea.method.aemmt.main.execute,
     aemmd: moea.method.aemmd.main.execute,
-    psobinary: moea.method.psobinary.main.execute
+    psobinary: moea.method.psobinary.main.execute,
+    manyAco: moea.method.manyAco.mkp.main.execute,
+    dynamic: moea.method.dynamic.mkp.main.execute,
+    simpleAco: moea.method.simpleAco.mkp.main.execute,
   };
 
   function getConfig(method, instance) {
     var mkp = moea.problem.knapsack.main;
+
+    var heuristics = _.map(instance.profitMatrix, function (values) {
+      return function (itemIndex, budget) {
+        // return (1 - (values[itemIndex] / 1000)) || 0.000001;
+        var profit =  values[itemIndex];
+        // var weight = instance.weights[itemIndex];
+        // return (profit * weight / 1000000) || 0.000001;
+        var weight = instance.weights[itemIndex] / budget;
+        return (profit / 1000) * (1 - weight);
+      };
+    });
+
+    heuristics.push(function (itemIndex) {
+      return (1 - instance.weights[itemIndex] / 1000) || 0.000001;
+    });
 
     var config = {
       global: {
@@ -77,6 +95,51 @@
         w: 0.5,
         c1: 1,
         c2: 1.5
+      },
+      manyAco: {
+        // numberOfGenerations: 200,
+        // populationSize: 45,
+        alpha: 1,
+        beta: 1.9,
+        initialPheromoneValue: 0.9,
+        evaporationRate: 0.3,
+        pheromoneBounds: {min: 0.1, max: 0.9},
+        weights: instance.weights,
+        capacity: instance.capacity,
+        profitMatrix: instance.profitMatrix,
+        heuristicFunctions: heuristics
+      },
+      simpleAco: {
+        numberOfGenerations: 50,
+        // populationSize: 45,
+        alpha: 1,
+        beta: 1.9,
+        initialPheromoneValue: 0.9,
+        evaporationRate: 0.3,
+        pheromoneBounds: {min: 0.1, max: 0.9},
+        weights: instance.weights,
+        capacity: instance.capacity,
+        profitMatrix: instance.profitMatrix,
+        heuristicFunctions: [
+          function (itemIndex, budget) {
+            var profit =  instance.profitMatrix[0][itemIndex];
+            // var weight = instance.weights[itemIndex];
+            // return profit * weight / 1000000;
+            var weight = instance.weights[itemIndex] / budget;
+            return (profit / 1000) * (1 - weight);
+            // return (profit / 1000) / weight;
+          }
+        ],
+        objective: function (solution) {
+          return _.reduce(solution, function (sum, isPresent, itemIndex) {
+            return sum - (isPresent ? instance.profitMatrix[0][itemIndex] : 0);
+          }, 0);
+        }
+      },
+      dynamic: {
+        weights: instance.weights,
+        capacity: instance.capacity,
+        profitMatrix: instance.profitMatrix
       }
     };
 

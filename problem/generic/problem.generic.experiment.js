@@ -73,7 +73,7 @@
 
     return runAlgorithm.then(function (solutions) {
       var uniqueInOS = _.uniqWith(_.map(solutions, _.partial(moea.help.pareto.getSolutionInObjectiveSpace, _, objectives, true)), _.isEqual);
-      checkSolutions(solutions, instance);
+      // checkSolutions(solutions, instance);
       return moea.help.report.getMetrics(uniqueInOS, instance.pareto, worst);
     });
   }

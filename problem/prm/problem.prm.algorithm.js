@@ -68,6 +68,10 @@
         problemWeights = prm.getProblemWeights(instance.problem),
         dijkstra, dijkstraWeights;
 
+    if (net.name === 5) {
+      _.pull(problemWeights, 'delay');
+    }
+
     dijkstraWeights = _.map(problemWeights, function (property) {
       return _.map(net.weights, function (weightList) {
         return _.map(weightList, function (weight) {
@@ -365,8 +369,8 @@
         ]
       },
       multiAco: {
-        // numberOfGenerations: 20,
-        // populationSize: 1,
+        // numberOfGenerations: 200,
+        // populationSize: 45,
         alpha: 1,
         beta: 1.9,
         initialPheromoneValue: 0.9,
@@ -392,7 +396,22 @@
             };
           }
         })
-      },
+      // }
+      //   heuristicFunctions: [
+      //     function (v, e) {
+      //       return (1 - normalizedWeights[v][e].cost) || 0.000001;
+      //     },
+      //     function (v, e) {
+      //       return (1 - normalizedWeights[v][e].delay) || 0.000001;
+      //     },
+      //     function (v, e) {
+      //       return (1 - normalizedWeights[v][e].traffic) || 0.000001;
+      //     },
+      //     // function (v, e) {
+      //     //   return normalizedWeights[v][e].capacity || 0.000001;
+      //     // }
+      //   ]
+      }
     };
 
     config.manyAco = config.multiAco;
