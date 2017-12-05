@@ -76,9 +76,11 @@
   function findMinimumDistances(graph, weights, queue, vertices) {
     while (!queue.isEmpty()) {
       let vertex = queue.extract();
-      _.forEach(graph[vertex.label], function (child) {
-        if (vertices[child].distance > vertex.distance + weights[vertex.label][child]) {
-          vertices[child].distance = vertex.distance + weights[vertex.label][child];
+      _.forEach(graph.getEdges(vertex.label), function (child) {
+        var edgeWeight = weights[vertex.label] && weights[vertex.label][child] ? weights[vertex.label][child] : 0,
+            cost = vertex.distance + edgeWeight;
+        if (vertices[child].distance > cost) {
+          vertices[child].distance = cost;
           vertices[child].parent = vertex.label;
           queue.update(child);
         }
@@ -89,7 +91,7 @@
   function dijkstra(graph, weights, startingNode) {
     var vertices, queue;
 
-    vertices = createVertices(graph.length);
+    vertices = createVertices(graph.size().vertices);
     vertices[startingNode].distance = 0;
     queue = new MinHeap(vertices);
 

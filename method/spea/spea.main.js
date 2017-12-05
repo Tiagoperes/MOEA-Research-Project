@@ -11,7 +11,7 @@
         population = ga.generateRandomPopulation(settings.populationSize, settings.randomize, settings.objectives),
         evaluationProperty = 'evaluation',
         extremes = norm.initializeExtremes(settings.objectives.length),
-        archive;
+        archive = [];
 
     if (settings.shouldNormalize) {
       norm.normalize(archive, population, extremes);

@@ -77,4 +77,8 @@
     return getCombinations(array, combinationSize);
   };
 
+  _.removeRandom = function(array) {
+    return array.splice(_.random(array.length - 1), 1)[0];
+  }
+
 }());

@@ -77,7 +77,8 @@
     getInstance: getInstance,
     crossover: crossover,
     generateRandom: generateRandom,
-    getObjectives: getObjectives
+    getObjectives: getObjectives,
+    makeValid: makeValid
   });
 
 }());

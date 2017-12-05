@@ -20,10 +20,15 @@
 
   function selectParents(population, crossoverRate, selection) {
     var pairs = [],
-      maxPairs = _.floor(crossoverRate * population.length);
+        maxPairs = _.floor(crossoverRate * population.length);
 
     while (pairs.length < maxPairs) {
-      pairs.push([selection(population), selection(population)]);
+      let p1 = selection(population);
+      let p2 = selection(population);
+      if (p1 === p2) {
+        p2 = selection(_.filter(population, function (ind) {return ind !== p1}));
+      }
+      pairs.push([p1, p2]);
     }
 
     return pairs;
@@ -82,6 +87,7 @@
     generateRandomPopulation: generateRandomPopulation,
     selectParents: selectParents,
     generateOffspring: generateOffspring,
+    mutate: mutate,
     randomizeIdenticalIndividuals: randomizeIdenticalIndividuals,
     getNumberOfGenerations: getNumberOfGenerations,
     logGeneration: logGeneration,
