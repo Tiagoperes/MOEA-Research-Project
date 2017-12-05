@@ -50,7 +50,7 @@
     }, []);
   }
 
-  function buildSolution(pheromones, heuristics, itemWeights, bagCapacity, alpha, beta) {
+  function buildSolution(pheromones, heuristics, itemWeights, bagCapacity, sampleSize, alpha, beta) {
     var itemBinArray = _.fill(new Array(itemWeights.length), false),
         path = [],
         isLeafFound = false,
@@ -58,7 +58,7 @@
         numberOfItemsInBag = 0;
 
     while (!isLeafFound) {
-      let children = getChildren(itemBinArray, itemWeights, currentWeight, bagCapacity);
+      let children = _.sampleSize(getChildren(itemBinArray, itemWeights, currentWeight, bagCapacity), sampleSize);
       if (children.length) {
         let probabilities = calculateProbabilities(numberOfItemsInBag, children, pheromones, heuristics, alpha, beta, bagCapacity - currentWeight);
         let itemToAdd = chooseItemAccordingToProbabilities(children, probabilities);
@@ -74,10 +74,10 @@
     return {items: itemBinArray, path: path};
   }
 
-  function buildSolutions(populationSize, pheromoneArray, heuristics, itemWeights, bagCapacity, alpha, beta, objective) {
+  function buildSolutions(populationSize, pheromoneArray, heuristics, itemWeights, bagCapacity, sampleSize, alpha, beta, objective) {
     var population = [];
     for (let i = 0; i < populationSize; i++) {
-      let solution = buildSolution(pheromoneArray, heuristics, itemWeights, bagCapacity, alpha, beta);
+      let solution = buildSolution(pheromoneArray, heuristics, itemWeights, bagCapacity, sampleSize, alpha, beta);
       population.push({
         solution: solution.items,
         path: solution.path,

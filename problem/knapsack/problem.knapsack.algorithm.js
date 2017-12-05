@@ -25,29 +25,30 @@
     simpleAco: moea.method.simpleAco.mkp.main.execute,
   };
 
-  function getConfig(method, instance) {
-    var mkp = moea.problem.knapsack.main;
-
-    var heuristics = _.map(instance.profitMatrix, function (values) {
+  function createHeuristics(profitMatrix, weights) {
+    var heuristics = _.map(profitMatrix, function (values) {
       return function (itemIndex, budget) {
-        // return (1 - (values[itemIndex] / 1000)) || 0.000001;
         var profit =  values[itemIndex];
-        // var weight = instance.weights[itemIndex];
-        // return (profit * weight / 1000000) || 0.000001;
-        var weight = instance.weights[itemIndex] / budget;
+        var weight = weights[itemIndex] / budget;
         return (profit / 1000) * (1 - weight);
       };
     });
 
     heuristics.push(function (itemIndex) {
-      return (1 - instance.weights[itemIndex] / 1000) || 0.000001;
+      return (1 - weights[itemIndex] / 1000) || 0.000001;
     });
+
+    return heuristics;
+  }
+
+  function getConfig(method, instance) {
+    var mkp = moea.problem.knapsack.main;
 
     var config = {
       global: {
         populationSize: 150,
         archiveSize: 150,
-        numberOfGenerations: (instance.items < 100) ? 100 : 200,
+        numberOfGenerations: 100,
         shouldNormalize: false,
         elementsPerTable: 50,
         randomize: _.partial(mkp.generateRandom, instance),
@@ -68,13 +69,13 @@
       moead: {
         divisions: MOEAD_DIVISIONS[instance.objectives],
         isRandomWeights: true,
-        comparisons: (instance.items < 100) ? 15000 : 30000,
+        comparisons: 15000,
         neighborhoodSize: 10,
         useTchebycheff: false
       },
       moeadd: {
         divisions: MOEAD_DIVISIONS[instance.objectives],
-        comparisons: (instance.items < 100) ? 15000 : 30000,
+        comparisons: 15000,
         neighborhoodSize: 10,
         localReproductionRate: 0.9
       },
@@ -90,30 +91,30 @@
         numberOfGenerations: (instance.items < 100) ? 7500 : 15000
       },
       psobinary: {
-        comparisons: (instance.items < 100) ? 15000 : 30000,
+        comparisons: 15000,
         divisions: MOEAD_DIVISIONS[instance.objectives],
         w: 0.5,
         c1: 1,
         c2: 1.5
       },
       manyAco: {
-        // numberOfGenerations: 200,
-        // populationSize: 45,
         alpha: 1,
-        beta: 1.9,
-        initialPheromoneValue: 0.9,
+        beta: 4.3,
+        sampling: 0.25,
+        isElitist: false,
+        pheromoneGroupSize: 5,
         evaporationRate: 0.3,
         pheromoneBounds: {min: 0.1, max: 0.9},
         weights: instance.weights,
         capacity: instance.capacity,
         profitMatrix: instance.profitMatrix,
-        heuristicFunctions: heuristics
+        heuristicFunctions: createHeuristics(instance.profitMatrix, instance.weights)
       },
       simpleAco: {
         numberOfGenerations: 50,
-        // populationSize: 45,
         alpha: 1,
-        beta: 1.9,
+        beta: 2,
+        sampling: 0.25,
         initialPheromoneValue: 0.9,
         evaporationRate: 0.3,
         pheromoneBounds: {min: 0.1, max: 0.9},
@@ -123,11 +124,8 @@
         heuristicFunctions: [
           function (itemIndex, budget) {
             var profit =  instance.profitMatrix[0][itemIndex];
-            // var weight = instance.weights[itemIndex];
-            // return profit * weight / 1000000;
             var weight = instance.weights[itemIndex] / budget;
             return (profit / 1000) * (1 - weight);
-            // return (profit / 1000) / weight;
           }
         ],
         objective: function (solution) {

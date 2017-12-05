@@ -51,7 +51,7 @@
     }, []);
   }
 
-  function buildSolution(pheromones, heuristics, hpower, itemWeights, bagCapacity, alpha, beta) {
+  function buildSolution(pheromones, heuristics, hpower, itemWeights, bagCapacity, sampleSize, alpha, beta, isElitist) {
     var itemBinArray = _.fill(new Array(itemWeights.length), false),
         path = [],
         isLeafFound = false,
@@ -59,10 +59,17 @@
         numberOfItemsInBag = 0;
 
     while (!isLeafFound) {
-      let children = getChildren(itemBinArray, itemWeights, currentWeight, bagCapacity);
+      let children = _.sampleSize(getChildren(itemBinArray, itemWeights, currentWeight, bagCapacity), sampleSize, isElitist);
       if (children.length) {
         let probabilities = calculateProbabilities(numberOfItemsInBag, children, pheromones, heuristics, hpower, alpha, beta, bagCapacity - currentWeight);
-        let itemToAdd = chooseItemAccordingToProbabilities(children, probabilities);
+        let itemToAdd;
+        if (isElitist) {
+          itemToAdd = _.maxBy(children, function (child) {
+            return probabilities[child];
+          });
+        } else {
+          itemToAdd = chooseItemAccordingToProbabilities(children, probabilities);
+        }
         itemBinArray[itemToAdd] = true;
         path.push(itemToAdd);
         currentWeight += itemWeights[itemToAdd];
@@ -75,7 +82,7 @@
     return {items: itemBinArray, path: path};
   }
 
-  function buildSolutions(populationSize, pheromoneTables, heuristics, itemWeights, bagCapacity, alpha, objectives) {
+  function buildSolutions(populationSize, pheromoneTables, heuristics, itemWeights, bagCapacity, sampleSize, alpha, isElitist, objectives) {
     const BASE = 3;
     var population = [];
     var maxNumber = Math.pow(BASE, heuristics.length) - 1;
@@ -84,7 +91,7 @@
       let table = i < tables.length ? tables[i] : _.sample(tables);
       let hpower = _.random(maxNumber).toString(BASE).split('');
       while (hpower.length < heuristics.length) hpower.unshift(0);
-      let solution = buildSolution(table.values, heuristics, hpower, itemWeights, bagCapacity, alpha, table.beta);
+      let solution = buildSolution(table.values, heuristics, hpower, itemWeights, bagCapacity, sampleSize, alpha, table.beta, isElitist);
       population.push({
         solution: solution.items,
         path: solution.path,

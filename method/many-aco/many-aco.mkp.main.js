@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const MAX_TABLE_CONVERGENCE = 5;
+  const MAX_TABLE_CONVERGENCE = 10;
 
   function createPheromoneArray(weights, size, initialPheromoneValue, initialBetaValue, isAllDominationTable) {
     return {
@@ -17,7 +17,7 @@
 
   function createPheromoneArrays(numberOfObjectives, numberOfItems, initialPheromoneValue, initialBetaValue) {
     var arrays = [],
-        objectives = [];
+      objectives = [];
 
     for (let i = 0; i < numberOfObjectives; i++) {
       objectives[i] = i;
@@ -66,7 +66,7 @@
     return result;
   }
 
-  function updateArchives(archiveDiff, pheromoneArrays) {
+  function updatePartialArchives(archiveDiff, pheromoneArrays) {
     var added = [];
     var removed = [];
     _.forEach(pheromoneArrays, function (array, i) {
@@ -91,60 +91,98 @@
     return {added: added, removed: removed};
   }
 
+  function mutate(population, rate, settings) {
+    _.forEach(population, function (ind) {
+      if (Math.random() < rate) {
+        let mutated = {solution: _.clone(ind.solution)};
+        let trues = [];
+        let falses = [];
+        _.forEach(mutated.solution, function (isPresent, index) {
+          if (isPresent) trues.push(index);
+          else falses.push(index);
+        });
+        mutated.solution[_.sample(trues)] = false;
+        mutated.solution[_.sample(falses)] = true;
+        window.moea.problem.knapsack.main.makeValid(mutated, settings);
+        mutated.path = [];
+        _.forEach(mutated.solution, function (isPresent, index) {
+          if (isPresent) mutated.path.push(index);
+        });
+        mutated.evaluation = moea.help.pareto.getSolutionInObjectiveSpace(mutated.solution, settings.objectives);
+        if (!moea.help.pareto.dominates(ind, mutated, 'evaluation')) {
+          ind.solution = mutated.solution;
+          ind.path = mutated.path;
+          ind.fitness = mutated.fitness;
+        }
+      }
+    });
+  }
+
+  function createPopulation(pheromoneArrays, builder, sampleSize, settings) {
+    let population = builder.buildSolutions(settings.populationSize, pheromoneArrays, settings.heuristicFunctions,
+      settings.weights, settings.capacity, sampleSize, settings.alpha, settings.isElitist, settings.objectives);
+    // mutate(population, 0.1, settings);
+    return population;
+  }
+
+  function updateArchive(pheromoneArray, population) {
+    let prev = pheromoneArray.archive;
+    _.forEach(population, function (individual) {
+      pheromoneArray.archive = moea.help.pareto.updateNonDominatedSet(pheromoneArray.archive, individual, 'evaluation');
+    });
+
+    return {
+      added: _.difference(pheromoneArray.archive, prev),
+      removed: _.difference(prev, pheromoneArray.archive)
+    };
+  }
+
+  function updateConvergence(pheromoneGroup, allPheromoneArrays, index, nextIndex) {
+    var pheromones = pheromoneGroup[index];
+    pheromones.convergence++;
+    pheromones.beta *= pheromones.multiplier;
+    pheromones.multiplier += 0.1;
+    if (pheromones.convergence > MAX_TABLE_CONVERGENCE) {
+      pheromones.convergence = 0;
+      pheromoneGroup[index] = allPheromoneArrays[nextIndex % allPheromoneArrays.length];
+      nextIndex++;
+    }
+    return nextIndex;
+  }
+
+  function updatePheromoneValues(pheromoneArray, positivePopulation, negativePopulation, settings) {
+    pheromoneArray.beta = settings.beta;
+    pheromoneArray.multiplier = 1.1;
+    depositPheromonesAccordingToSolutions(pheromoneArray.values, positivePopulation, settings.evaporationRate, settings.pheromoneBounds.max, settings.profitMatrix, settings.weights);
+    evaporatePheromonesAccordingToSolutions(pheromoneArray.values, negativePopulation, settings.evaporationRate, settings.pheromoneBounds.min, settings.profitMatrix, settings.weights);
+  }
+
+  function updatePheromoneGroup(group, archiveDifference, allPheromoneArrays, nextPheromoneIndex, settings) {
+    let diffs = updatePartialArchives(archiveDifference, group);
+    _.forEach(group, function (pheromones, index) {
+      if (_.isEmpty(diffs.added[index])) {
+        nextPheromoneIndex = updateConvergence(group, allPheromoneArrays, index, nextPheromoneIndex);
+      } else {
+        updatePheromoneValues(pheromones, diffs.added[index], diffs.removed[index], settings);
+      }
+    });
+    return nextPheromoneIndex;
+  }
+
   function run(settings) {
-    var MAX_ARRAYS = 5,
-        arrayIndex = 0,
-        allPheromoneArrays = createPheromoneArrays(settings.objectives.length, settings.weights.length, 0.1, settings.beta),
-        pheromoneArrays = _.slice(allPheromoneArrays, arrayIndex, arrayIndex + MAX_ARRAYS),
+    var arrayIndex = settings.pheromoneGroupSize,
+        allPheromoneArrays = createPheromoneArrays(settings.objectives.length, settings.weights.length, settings.pheromoneBounds.min, settings.beta),
+        pheromoneArrays = _.slice(allPheromoneArrays, 0, arrayIndex),
         allDominationArray = _.last(allPheromoneArrays),
         builder = moea.method.manyAco.build.mkp,
-        archiveConverged = 0;
+        sampleSize = Math.ceil((settings.sampling || 1) * settings.weights.length);
 
     for (let i = 0; i < settings.numberOfGenerations; i++) {
       moea.method.ga.logGeneration(i, settings.numberOfGenerations);
-
-      let population = builder.buildSolutions(settings.populationSize, pheromoneArrays, settings.heuristicFunctions,
-        settings.weights, settings.capacity, settings.alpha, settings.objectives);
-
-      // console.log(_.uniqWith(population, function (a, b) {return _.isEqual(a.evaluation, b.evaluation); }).length + ' unique solutions.');
-
-      let prev = allDominationArray.archive;
-      _.forEach(population, function (individual) {
-        allDominationArray.archive = moea.help.pareto.updateNonDominatedSet(allDominationArray.archive, individual, 'evaluation');
-      });
-
-      let archiveDiff = {
-        added: _.difference(allDominationArray.archive, prev),
-        removed: _.difference(prev, allDominationArray.archive)
-      };
-
-      if (archiveDiff.added.length) {
-        let diffs = updateArchives(archiveDiff, pheromoneArrays);
-        _.forEach(pheromoneArrays, function (table, index) {
-          if (diffs.added[index].length) {
-            table.beta = settings.beta;
-            table.multiplier = 1.1;
-            depositPheromonesAccordingToSolutions(table.values, diffs.added[index], settings.evaporationRate, settings.pheromoneBounds.max, settings.profitMatrix, settings.weights);
-            evaporatePheromonesAccordingToSolutions(table.values, diffs.removed[index], settings.evaporationRate, settings.pheromoneBounds.min, settings.profitMatrix, settings.weights);
-          } else {
-            table.convergence++;
-            table.beta *= table.multiplier;
-            table.multiplier += 0.1;
-            if (table.convergence > MAX_TABLE_CONVERGENCE) {
-              table.convergence = 0;
-              pheromoneArrays[index] = allPheromoneArrays[arrayIndex % allPheromoneArrays.length];
-              arrayIndex++;
-            }
-          }
-        });
-      } else {
-        archiveConverged++;
-      }
+      let population = createPopulation(pheromoneArrays, builder, sampleSize, settings);
+      let archiveDifference = updateArchive(allDominationArray, population);
+      arrayIndex = updatePheromoneGroup(pheromoneArrays, archiveDifference, allPheromoneArrays, arrayIndex, settings);
     }
-
-    console.log('number of tables: ' + allPheromoneArrays.length);
-    console.log('last table analyzed: ' + arrayIndex);
-    console.log('archive converged ' + archiveConverged + ' times');
 
     return _.map(allDominationArray.archive, 'solution');
   }
