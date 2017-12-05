@@ -119,10 +119,10 @@
   }
 
   function createPopulation(pheromoneArrays, builder, sampleSize, settings) {
-    let population = builder.buildSolutions(settings.populationSize, pheromoneArrays, settings.heuristicFunctions,
+    return builder.buildSolutions(settings.populationSize, pheromoneArrays, settings.heuristicFunctions,
       settings.weights, settings.capacity, sampleSize, settings.alpha, settings.isElitist, settings.objectives);
     // mutate(population, 0.1, settings);
-    return population;
+    // return population;
   }
 
   function updateArchive(pheromoneArray, population) {

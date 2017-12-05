@@ -372,7 +372,7 @@
         // numberOfGenerations: 200,
         // populationSize: 45,
         alpha: 1,
-        beta: 1.9,
+        beta: 2,
         initialPheromoneValue: 0.9,
         evaporationRate: 0.3,
         pheromoneBounds: {min: 0.1, max: 0.9},
@@ -381,7 +381,7 @@
           return _.map(normalizedWeights, function (line) {
             return _.map(line, function (weight) {
               if (weight === null) return null;
-              return weight[name];
+              return (name === 'capacity') ? (1 - weight[name]) : weight[name];
             });
           });
         }),
