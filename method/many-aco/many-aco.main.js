@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const MAX_TABLE_CONVERGENCE = 5;
+  const MAX_TABLE_CONVERGENCE = 10;
 
   function createPheromoneTable(weights, size, initialPheromoneValue, initialBetaValue, isAllDominationTable) {
     var table = {weights: weights, values: [], archive: [], convergence: 0, beta: initialBetaValue, multiplier: 1.1, isAllDominationTable: isAllDominationTable};
@@ -32,7 +32,6 @@
   }
 
   function getWeightsMean(weights, v, e) {
-    // return 0;
     return _.sumBy(weights, function (weightMatrix) {
       return weightMatrix[v][e];
     }) / weights.length;
@@ -144,10 +143,9 @@
   }
 
   function run(settings) {
-    var MAX_TABLES = 5,
-        tableIndex = 0,
+    var tableIndex = 5,
         allPheromoneTables = createPheromoneTables(settings.objectives.length, settings.network.graph.size().vertices, 0.1, settings.beta),
-        pheromoneTables = _.slice(allPheromoneTables, tableIndex, tableIndex + MAX_TABLES),
+        pheromoneTables = _.slice(allPheromoneTables, 0, tableIndex),
         allDominationTable = _.last(allPheromoneTables),
         builder = moea.method.manyAco.build,
         sampleSize = 10,
@@ -210,26 +208,24 @@
         // }
       }
 
-      if (archiveDiff.added.length) {
-        let diffs = updateArchives(archiveDiff, pheromoneTables);
-        _.forEach(pheromoneTables, function (table, index) {
-          if (diffs.added[index].length) {
-            table.beta = settings.beta;
-            table.multiplier = 1.1;
-            depositPheromonesAccordingToSolutions(table.values, diffs.added[index], settings.evaporationRate, settings.pheromoneBounds.max, settings.weights);
-            evaporatePheromonesAccordingToSolutions(table.values, diffs.removed[index], settings.evaporationRate, settings.pheromoneBounds.min, settings.weights);
-          } else {
-            table.convergence++;
-            table.beta *= table.multiplier;
-            table.multiplier += 0.1;
-            if (table.convergence > MAX_TABLE_CONVERGENCE) {
-              table.convergence = 0;
-              pheromoneTables[index] = allPheromoneTables[tableIndex % allPheromoneTables.length];
-              tableIndex++;
-            }
+      let diffs = updateArchives(archiveDiff, pheromoneTables);
+      _.forEach(pheromoneTables, function (table, index) {
+        if (_.isEmpty(diffs.added[index])) {
+          table.convergence++;
+          table.beta *= table.multiplier;
+          table.multiplier += 0.1;
+          if (table.convergence > MAX_TABLE_CONVERGENCE) {
+            table.convergence = 0;
+            pheromoneTables[index] = allPheromoneTables[tableIndex % allPheromoneTables.length];
+            tableIndex++;
           }
-        });
-      }
+        } else {
+          table.beta = settings.beta;
+          table.multiplier = 1.1;
+          depositPheromonesAccordingToSolutions(table.values, diffs.added[index], settings.evaporationRate, settings.pheromoneBounds.max, settings.weights);
+          evaporatePheromonesAccordingToSolutions(table.values, diffs.removed[index], settings.evaporationRate, settings.pheromoneBounds.min, settings.weights);
+        }
+      });
     }
 
     console.log('number of tables: ' + allPheromoneTables.length);

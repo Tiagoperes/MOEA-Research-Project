@@ -79,11 +79,11 @@
   function updateParetoWithNewSolutions(pareto, newParetoSolutions, progress, dbName) {
     var newPareto = getUpdatedPareto(pareto, newParetoSolutions);
 
-    // if (pareto !== newPareto) {
-    //   console.log('The pareto set has been modified. Restarting...');
-    //   progress.reset();
-    //   savePareto(newPareto, dbName);
-    // }
+    if (pareto !== newPareto) {
+      console.log('The pareto set has been modified. Restarting...');
+      progress.reset();
+      savePareto(newPareto, dbName);
+    }
 
     return newPareto;
   }
