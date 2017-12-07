@@ -11,6 +11,19 @@
     }
     return true;
   }
+  
+  function checkEdges(tree, graph) {
+	var treeData = tree.asArray(),
+		graphData = graph.asArray();
+		  
+	for (let i = 0; i < treeData.length; i++) {
+		for (let j = 0; j < (treeData[i] ? treeData[i].length : 0); j++) {
+			if (!_.includes(graphData[i], treeData[i][j])) return false;
+		}
+	}
+	
+	return true;
+  }
 
   function checkSolutions(solutions, instance) {
     var invalid = 0;
@@ -22,6 +35,7 @@
       else {
         let vertices = tree.getAchievableVertices(instance.network.root);
         if (!containsAll(vertices, instance.network.destinations)) invalid++;
+		else if (!checkEdges(tree, instance.network.graph)) invalid++;
       }
     });
     console.log(invalid + ' invalid solutions of a total of ' + solutions.length);
