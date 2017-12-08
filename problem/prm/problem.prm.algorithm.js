@@ -44,6 +44,7 @@
   var methods = {
     nsga: moea.method.nsga.main.execute,
     nsga3: moea.method.nsga3.main.execute,
+    nsga3yuan: moea.method.nsga3yuan.main.execute,
     spea: moea.method.spea.main.execute,
     speaSde: moea.method.spea.main.execute,
     moead: moea.method.moead.main.execute,

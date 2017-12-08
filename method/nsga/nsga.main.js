@@ -31,7 +31,14 @@
     return nsgaGeneral(settings, select);
   }
 
+  function nsga3yuan(settings) {
+    var lambda = moea.method.nsga.vectorGenerator.createVectors(6, 0, settings.objectives.length);
+    var select = _.partial(moea.method.nsga.selection.yuan.select, _, _, lambda, settings.shouldNormalize);
+    return nsgaGeneral(settings, select);
+  }
+
   window.moea = window.moea || {};
   _.set(moea, 'method.nsga.main.execute', nsga2);
   _.set(moea, 'method.nsga3.main.execute', nsga3);
+  _.set(moea, 'method.nsga3yuan.main.execute', nsga3yuan);
 }());
