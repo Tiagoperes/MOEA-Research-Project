@@ -3,7 +3,11 @@
 
   function getUpdatedPareto(currentPareto, newParetoSolutions) {
     return _.reduce(newParetoSolutions, function (pareto, s) {
-      return moea.help.pareto.updateNonDominatedSet(pareto, s);
+      var newPareto = moea.help.pareto.updateNonDominatedSet(pareto, s);
+      if (pareto !== newPareto) {
+        console.log('new solution: ' + s);
+      }
+      return newPareto;
     }, currentPareto);
   }
 
@@ -51,18 +55,12 @@
     }
   }
 
-  function getCombinedSolutions(methods, instance, progress, objectives, runner) {
-    var result = [];
+  function getSolutions(method, instance, objectives, runner, countInvalidSolutions) {
+    var solutions = runner(method, instance),
+        invalid = countInvalidSolutions(solutions, instance);
 
-    _.forEach(methods, function (method) {
-      var solutions = runner(method, instance),
-          pareto = _.map(solutions, _.partial(moea.help.pareto.getSolutionInObjectiveSpace, _, objectives));
-
-      result = _.uniqWith(_.concat(result, pareto), _.isEqual);
-      progress.next();
-    });
-
-    return result;
+    if (invalid > 0) throw Error(invalid + ' invalid solutions!');
+    return _.map(solutions, _.partial(moea.help.pareto.getSolutionInObjectiveSpace, _, objectives));
   }
 
   function logResults(instance, newPareto) {
@@ -76,11 +74,11 @@
     }
   }
 
-  function updateParetoWithNewSolutions(pareto, newParetoSolutions, progress, dbName) {
+  function updateParetoWithNewSolutions(pareto, newParetoSolutions, progress, dbName, method) {
     var newPareto = getUpdatedPareto(pareto, newParetoSolutions);
 
     if (pareto !== newPareto) {
-      console.log('The pareto set has been modified. Restarting...');
+      console.log('The pareto set has been modified. Restarting progress for ' + method + '.');
       progress.reset();
       savePareto(newPareto, dbName);
     }
@@ -88,17 +86,33 @@
     return newPareto;
   }
 
-  function updatePareto(instance, objectives, dbName, runner, numberOfExecutions, methods, shouldReset) {
-    var pareto = loadPareto(instance, dbName, shouldReset),
-        progress;
+  function logOverallProgress(progressArray) {
+    var sum = _.sumBy(progressArray, function (p) {
+      return p.get();
+    });
 
-    progress = moea.help.progress.create(numberOfExecutions * methods.length);
-    progress.log();
+    console.log((sum / progressArray.length).toFixed(2) + '%');
+  }
+
+  function updatePareto(instance, objectives, dbName, runner, numberOfExecutions, methods, shouldReset, countInvalidSolutions) {
+    var pareto = loadPareto(instance, dbName, shouldReset),
+        progress = [],
+        completed = 0;
+
+    for (let i = 0; i < methods.length; i++) progress[i] = moea.help.progress.create(numberOfExecutions, false);
+    logOverallProgress(progress);
     moea.method.ga.deactivateLog();
 
-    while (!progress.isComplete()) {
-        let solutions = getCombinedSolutions(methods, instance, progress, objectives, runner);
-        pareto = updateParetoWithNewSolutions(pareto, solutions, progress, dbName);
+    while (completed < methods.length) {
+      for (let i = 0; i < methods.length; i++) {
+        if (!progress[i].isComplete()) {
+          let solutions = getSolutions(methods[i], instance, objectives, runner, countInvalidSolutions);
+          progress[i].next();
+          pareto = updateParetoWithNewSolutions(pareto, solutions, progress[i], dbName, methods[i]);
+          if (progress[i].isComplete()) completed++;
+          logOverallProgress(progress);
+        }
+      }
     }
 
     logResults(instance, pareto);

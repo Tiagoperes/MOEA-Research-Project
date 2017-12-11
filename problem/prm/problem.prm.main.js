@@ -167,7 +167,10 @@
     var instance = {
       network: moea.problem.prm.instances['rede' + network],
       problem: problem,
-      pareto: moea.problem.prm.paretos[network][problem - 1]
+      pareto: moea.problem.prm.paretos[network][problem - 1],
+      toString: function () {
+        return 'net' + network + 'p' + problem;
+      }
     };
     if (!(instance.network.graph instanceof moea.help.Graph)) {
       instance.network.graph = new moea.help.Graph(instance.network.graph);
@@ -180,12 +183,49 @@
     return instance;
   }
 
+  function containsAll(a, b) {
+    for (let i = 0; i < b.length; i++) {
+      if (!_.includes(a, b[i])) return false;
+    }
+    return true;
+  }
+
+  function checkEdges(tree, graph) {
+    var treeData = tree.asArray(),
+        graphData = graph.asArray();
+
+    for (let i = 0; i < treeData.length; i++) {
+      for (let j = 0; j < (treeData[i] ? treeData[i].length : 0); j++) {
+        if (!_.includes(graphData[i], treeData[i][j])) return false;
+      }
+    }
+
+    return true;
+  }
+
+  function countInvalidSolutions(solutions, instance) {
+    var invalid = 0;
+    _.forEach(solutions, function (tree) {
+      if (tree.hasCycle(instance.network.root)) {
+        invalid++;
+        console.log('cycle :(');
+      }
+      else {
+        let vertices = tree.getAchievableVertices(instance.network.root);
+        if (!containsAll(vertices, instance.network.destinations)) invalid++;
+        else if (!checkEdges(tree, instance.network.graph)) invalid++;
+      }
+    });
+    return invalid;
+  }
+
   window.moea = window.moea || {};
   _.set(moea, 'problem.prm.main', {
     getInstance: getInstance,
     getObjectives: getObjectives,
     getProblemWeights: getProblemWeights,
     getAllEvaluationFunctions: getAllEvaluationFunctions,
-    getDataFlow: getDataFlow
+    getDataFlow: getDataFlow,
+    countInvalidSolutions: countInvalidSolutions
   });
 }());

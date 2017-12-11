@@ -1,8 +1,10 @@
 (function () {
   'use strict';
 
-  function createProgress(numberOfSteps) {
+  function createProgress(numberOfSteps, shouldLog) {
     var percent, step;
+
+    if (shouldLog === undefined) shouldLog = true;
     
     if (numberOfSteps === 0) {
       percent = 100;
@@ -20,11 +22,14 @@
       next: function (numberOfSteps) {
         if (numberOfSteps === undefined) numberOfSteps = 1;
         percent += numberOfSteps * step;
-        log();
+        if (shouldLog) log();
       },
       reset: function () {
         percent = 0;
-        log();
+        if (shouldLog) log();
+      },
+      get: function () {
+        return percent;
       },
       isComplete: function () {
         return 100 - percent <= 0.00001;

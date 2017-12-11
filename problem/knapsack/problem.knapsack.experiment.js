@@ -5,16 +5,6 @@
     return 'mkp-exp-' + objectives + '-' + items + '-' + method;
   }
 
-  function checkSolutions(solutions, instance) {
-    var invalid = _.filter(solutions, function (solution) {
-      if (solution.length !== instance.items) return true;
-      return _.reduce(solution, function (sum, isPresent, index) {
-        return (isPresent) ? (sum + instance.weights[index]) : sum;
-      }) > instance.capacity;
-    });
-    console.log(invalid.length + ' invalid solutions of ' + solutions.length);
-  }
-
   function run(method, numberOfObjectives, numberOfItems, numberOfExecutions, shouldReset) {
     var instance = moea.problem.knapsack.main.getInstance(numberOfObjectives, numberOfItems),
         dbName = getDBName(numberOfObjectives, numberOfItems, method),
@@ -24,7 +14,7 @@
           runAlgorithm: moea.problem.knapsack.algorithm.run,
           getObjectives: moea.problem.knapsack.main.getObjectives,
           getWorst: _.wrap(_.fill(new Array(numberOfObjectives), 0)),
-          checkSolutions: checkSolutions
+          countInvalidSolutions: moea.problem.knapsack.main.countInvalidSolutions
         };
 
     return moea.problem.generic.experiment.run(method, instance, numberOfExecutions, shouldReset, dbName, settings);
@@ -37,7 +27,7 @@
       getScenarioName: function (items) { return items + ' items'},
       getProblemName: function (objectives) { return objectives + ' objectives'},
       getDBName: getDBName,
-      checkSolutions: checkSolutions
+      countInvalidSolutions: moea.problem.knapsack.main.countInvalidSolutions
     };
 
     return moea.problem.generic.experiment.getFormattedResults(type, objectives, items, methods, properties, shouldPrintNames, settings);

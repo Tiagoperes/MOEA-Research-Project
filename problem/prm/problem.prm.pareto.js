@@ -14,7 +14,8 @@
 
     methods = methods || _.keys(prm.algorithm.methods);
 
-    return moea.problem.generic.pareto.update(instance, objectives, dbName, runner, numberOfExecutions, methods, shouldReset);
+    return moea.problem.generic.pareto.update(instance, objectives, dbName, runner, numberOfExecutions, methods,
+      shouldReset, moea.problem.prm.main.countInvalidSolutions);
   }
 
   function saveToParetoDB(solutions, instance) {

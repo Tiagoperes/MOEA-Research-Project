@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const SHOULD_IGNORE_NEW_SOLUTIONS = true;
+  const SHOULD_IGNORE_NEW_SOLUTIONS = false;
 
   function createReport(executions) {
     var report = {
@@ -23,36 +23,41 @@
     });
 
     report.toString = function () {
-      var str = '';
-      str += '------------------------';
-      str += '\nNo de execuções: ' + executions.length;
-      str += '\nTaxa de erro: ' + report.er.toFixed(2);
-      str += '\nGenerational distance: ' + report.gd.toFixed(2);
-      str += '\nPareto subset: ' + report.ps.toFixed(2);
-      str += '\nTaxa de cobertura do Pareto: ' + report.pcr.toFixed(2);
-      str += '\nSpread: ' + report.sp.toFixed(2);
-      str += '\nSpread (Fialho): ' + report.fsp.toFixed(2);
-      str += '\nMáximo spread: ' + report.ms.toFixed(2);
-      str += '\nHipervolume: ' + report.hv.toFixed(2);
-      str += '\n------------------------';
-      return str;
+      // var str = '';
+      // str += '------------------------';
+      // str += '\nNo de execuções: ' + executions.length;
+      // str += '\nTaxa de erro: ' + report.er.toFixed(2);
+      // str += '\nGenerational distance: ' + report.gd.toFixed(2);
+      // str += '\nPareto subset: ' + report.ps.toFixed(2);
+      // str += '\nTaxa de cobertura do Pareto: ' + report.pcr.toFixed(2);
+      // str += '\nSpread: ' + report.sp.toFixed(2);
+      // str += '\nSpread (Fialho): ' + report.fsp.toFixed(2);
+      // str += '\nMáximo spread: ' + report.ms.toFixed(2);
+      // str += '\nHipervolume: ' + report.hv.toFixed(2);
+      // str += '\n------------------------';
+      // return str;
+
+      function getLine(property) {
+        return property.er + '\t' + property.gd + '\t' + property.ps + '\t' + property.sp + '\t' + property.ms + '\t' + property.hv;
+      }
+
+      return ('mean: ' + getLine(report.mean) + '\nsd: ' + getLine(report.sd)).replace(/\./g, ',');
     };
 
     return report;
   }
 
-  function getErrorRate(solutions, pareto) {
+  function getDominatedSolutions(solutions, pareto) {
     var newSolutions = [];
-    var sum =  _.sumBy(solutions, function (s) {
+    var dominated =  _.filter(solutions, function (s) {
       var isDominated = moea.help.pareto.isDominatedBySet(s, pareto);
-      if (isDominated) return 1;
+      if (isDominated) return true;
       if (!SHOULD_IGNORE_NEW_SOLUTIONS && !_.find(pareto, _.partial(_.isEqual, s))) {
         newSolutions.push(s);
       }
-      return 0;
     });
     if (newSolutions.length) throw new moea.help.pareto.IncompleteParetoException(newSolutions);
-    return sum / solutions.length;
+    return dominated;
   }
 
   function getDistance(s1, s2) {
@@ -112,10 +117,11 @@
   }
 
   function getSpread(solutions) {
-    var de = getClosestDistanceToExtremes(solutions);
-    var cd = _.map(solutions, _.partial(getDistanceToClosest, _, solutions));
-    var medianDistance = _.sum(cd) / solutions.length;
-    var globalDifferenceToMedian = _.sumBy(cd, function (dist) {
+    if (solutions.length < 2) return 0;
+    let de = getClosestDistanceToExtremes(solutions);
+    let cd = _.map(solutions, _.partial(getDistanceToClosest, _, solutions));
+    let medianDistance = _.sum(cd) / solutions.length;
+    let globalDifferenceToMedian = _.sumBy(cd, function (dist) {
       return Math.abs(dist - medianDistance);
     });
     return (de + globalDifferenceToMedian) / (de + solutions.length * medianDistance);
@@ -132,7 +138,8 @@
   }
 
   function getFialhosSpread(solutions, pareto) {
-    var orderedSolutions = _.orderBy(solutions),
+    if (solutions.length < 2) return 0;
+    let orderedSolutions = _.orderBy(solutions),
         orderedPareto = _.orderBy(pareto),
         de = getDistanceBetweenSetsExtremes(orderedSolutions, orderedPareto),
         cd = getConsecutiveDistances(orderedSolutions),
@@ -168,12 +175,13 @@
   }
 
   function getMetrics(solutions, pareto, hvReference) {
-    var er = getErrorRate(solutions, pareto),
+    var dominated = getDominatedSolutions(solutions, pareto),
+        er = dominated.length / solutions.length,
         ps = (1 - er) * solutions.length;
 
     return {
-      er: er,
-      gd: getGenerationalDistance(solutions, pareto),
+      er: er * 100,
+      gd: dominated.length > 0 ? getGenerationalDistance(dominated, pareto) : 0,
       ps: ps,
       pcr: ps / pareto.length,
       sp: getSpread(solutions),

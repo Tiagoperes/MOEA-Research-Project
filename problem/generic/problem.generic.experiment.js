@@ -19,9 +19,22 @@
         worst = problemSettings.getWorst();
 
     return runAlgorithm.then(function (solutions) {
-      var uniqueInOS = _.uniqWith(_.map(solutions, _.partial(moea.help.pareto.getSolutionInObjectiveSpace, _, objectives, true)), _.isEqual);
-      problemSettings.checkSolutions(solutions, instance);
-      return moea.help.report.getMetrics(uniqueInOS, instance.pareto, worst);
+      var evaluations = _.map(solutions, _.partial(moea.help.pareto.getSolutionInObjectiveSpace, _, objectives, true)),
+          uniqueInOS = _.uniqWith(evaluations, _.isEqual),
+          invalid = problemSettings.countInvalidSolutions(solutions, instance);
+
+      if (invalid > 0) throw Error(invalid + ' invalid solutions!');
+
+      try {
+        return moea.help.report.getMetrics(uniqueInOS, instance.pareto, worst);
+      } catch (e) {
+        if (e instanceof moea.help.pareto.IncompleteParetoException) {
+          e.solutions = _.map(e.evaluations, function (evaluation) {
+            return solutions[_.indexOf(evaluations, evaluation)];
+          });
+        }
+        throw e;
+      }
     });
   }
 
@@ -45,8 +58,9 @@
     console.log(unsavedPareto);
   }
 
-  function printReport(report) {
-    document.body.innerHTML += '<pre>' + JSON.stringify(report).replace(/"er":(\d+\.?\d*),"gd":(\d+\.?\d*),"ps":(\d+\.?\d*),"pcr":\d+\.?\d*,"sp":\d+\.?\d*,"fsp":(\d+\.?\d*),"ms":(\d+\.?\d*),"hv":(\d+\.?\d*)/g, '$1\t$2\t$3\t$4\t$5\t$6').replace(/(\d+)\.(\d+)/g,'$1,$2').replace(/[\{\}]/g, '').replace(/,"sd":/g, '\n"sd":') + '</pre>';
+  function printReport(report, method, instance) {
+    document.body.innerHTML += '<p> ' + method + ' ' + instance.toString() + '</p>';
+    document.body.innerHTML += '<pre>' + report.toString() + '</pre>';
   }
 
   function checkInputForRun(input) {
@@ -83,7 +97,7 @@
 
     metricsLoop(method, progress, metrics, instance, dbName, problemSettings).then(function () {
       report = moea.help.report.createReport(metrics);
-      printReport(report);
+      printReport(report, method, instance);
       verifyUnsavedPareto(instance, false, problemSettings);
       console.log('Average time taken: ' + ((new Date().getTime() - time) / (numberOfExecutions * 1000)) + 's');
     });

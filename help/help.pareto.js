@@ -99,10 +99,10 @@
     this.message = message;
   }
 
-  function IncompleteParetoException(solutions) {
-    this.solutions = solutions;
+  function IncompleteParetoException(evaluations) {
+    this.evaluations = evaluations;
     this.name = 'IncompleteParetoException';
-    this.message = 'IncompleteParetoException: ' + solutions.length + ' solutions found. It is advised to update the Pareto and restart the experiments.';
+    this.message = 'IncompleteParetoException: ' + evaluations.length + ' solutions found. It is advised to update the Pareto and restart the experiments.';
   }
 
   function UnsavedParetoException(paretoToSave) {

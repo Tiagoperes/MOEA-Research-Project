@@ -69,7 +69,21 @@
 
   function getInstance(numberOfObjectives, numberOfItems) {
     var name = 'obj' + numberOfObjectives + 'Itm' + numberOfItems;
-    return moea.problem.knapsack.instances[name];
+    var instance = moea.problem.knapsack.instances[name];
+    instance.toString = function () {
+      return name;
+    };
+    return instance;
+  }
+
+  function countInvalidSolutions(solutions, instance) {
+    var invalid = _.filter(solutions, function (solution) {
+      if (solution.length !== instance.items) return true;
+      return _.reduce(solution, function (sum, isPresent, index) {
+        return (isPresent) ? (sum + instance.weights[index]) : sum;
+      }) > instance.capacity;
+    });
+    return invalid.length;
   }
 
   window.moea = window.moea || {};
@@ -78,7 +92,8 @@
     crossover: crossover,
     generateRandom: generateRandom,
     getObjectives: getObjectives,
-    makeValid: makeValid
+    makeValid: makeValid,
+    countInvalidSolutions: countInvalidSolutions
   });
 
 }());
