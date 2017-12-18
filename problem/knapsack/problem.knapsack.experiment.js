@@ -26,8 +26,7 @@
       defaultScenarios: [30, 50, 100],
       getScenarioName: function (items) { return items + ' items'},
       getProblemName: function (objectives) { return objectives + ' objectives'},
-      getDBName: getDBName,
-      countInvalidSolutions: moea.problem.knapsack.main.countInvalidSolutions
+      getDBName: getDBName
     };
 
     return moea.problem.generic.experiment.getFormattedResults(type, objectives, items, methods, properties, shouldPrintNames, settings);

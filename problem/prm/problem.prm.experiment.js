@@ -26,8 +26,7 @@
       defaultScenarios: [2,4,5],
       getScenarioName: function (problem) { return 'p' + problem},
       getProblemName: function (network) { return 'rede' + network},
-      getDBName: getDBName,
-      countInvalidSolutions: countInvalidSolutions
+      getDBName: getDBName
     };
 
     return moea.problem.generic.experiment.getFormattedResults(type, problem, network, methods, properties, shouldPrintNames, settings);

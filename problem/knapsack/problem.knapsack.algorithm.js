@@ -55,7 +55,7 @@
         randomize: _.partial(mkp.generateRandom, instance),
         objectives: mkp.getObjectives(instance),
         crossover: {rate: 0.5, method: _.partial(mkp.crossover, _, _, instance)},
-        mutation: {rate: 2 / instance.items, method: moea.help.binary.mutate}
+        mutation: {rate: 0.05, method: moea.help.binary.mutate}
       },
       nsga: {},
       nsga3: {
