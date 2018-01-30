@@ -13,7 +13,28 @@
     });
   }
 
-  function getMetricsForMethod(method, instance, problemSettings) {
+  function loadParetoSet(dbName) {
+    if (window.__pareto_cache && window.__pareto_cache[dbName]) {
+      return window.__pareto_cache[dbName];
+    }
+    let db = localStorage.getItem(dbName + '-ps');
+    if (db) {
+      db = JSON.parse(LZString.decompress(db));
+    } else {
+      db = [];
+    }
+    return db;
+  }
+
+  function saveParetoSet(dbName, solutions) {
+    let db = loadParetoSet(dbName);
+    db.push(solutions);
+    window.__pareto_cache = window.__pareto_cache || {};
+    window.__pareto_cache[dbName] = db;
+    localStorage.setItem(dbName + '-ps', LZString.compress(JSON.stringify(db)));
+  }
+
+  function getMetricsForMethod(method, instance, shouldRememberPS, dbName, problemSettings) {
     var runAlgorithm =  Promise.resolve(problemSettings.runAlgorithm(method, instance)),
         objectives = problemSettings.getObjectives(instance),
         worst = problemSettings.getWorst();
@@ -26,6 +47,7 @@
       if (invalid > 0) throw Error(invalid + ' invalid solutions!');
 
       try {
+        if (shouldRememberPS) saveParetoSet(dbName, uniqueInOS);
         return moea.help.report.getMetrics(uniqueInOS, instance.pareto, worst);
       } catch (e) {
         if (e instanceof moea.help.pareto.IncompleteParetoException) {
@@ -38,8 +60,8 @@
     });
   }
 
-  function updateMetricsWithOneMoreRun(metrics, method, instance, progress, dbName, problemSettings) {
-    return getMetricsForMethod(method, instance, problemSettings).then(function (result) {
+  function updateMetricsWithOneMoreRun(metrics, method, instance, progress, shouldRememberPS, dbName, problemSettings) {
+    return getMetricsForMethod(method, instance, shouldRememberPS, dbName, problemSettings).then(function (result) {
       metrics.push(result);
       progress.next();
     });
@@ -73,16 +95,16 @@
     });
   }
 
-  function metricsLoop(method, progress, metrics, instance, dbName, problemSettings) {
+  function metricsLoop(method, progress, metrics, instance, shouldRememberPS, dbName, problemSettings) {
     if (!progress.isComplete()) {
-      return updateMetricsWithOneMoreRun(metrics, method, instance, progress, dbName, problemSettings).then(function () {
-        return metricsLoop(method, progress, metrics, instance, dbName, problemSettings);
+      return updateMetricsWithOneMoreRun(metrics, method, instance, progress, shouldRememberPS, dbName, problemSettings).then(function () {
+        return metricsLoop(method, progress, metrics, instance, shouldRememberPS, dbName, problemSettings);
       });
     }
     return Promise.resolve();
   }
 
-  function run(method, instance, numberOfExecutions, shouldReset, dbName, problemSettings) {
+  function run(method, instance, numberOfExecutions, shouldReset, shouldRememberPS, dbName, problemSettings) {
     var metrics, progress, report, time = new Date().getTime();
 
     console.log('%cseedrandom: using seed "' + Math.getRandomizationSeed() + '". To change, call Math.seedrandom(yourSeed).', 'color: blue');
@@ -91,11 +113,15 @@
     metrics = moea.help.database.create(dbName, shouldReset);
     progress = moea.help.progress.create(numberOfExecutions);
 
+    if (shouldReset) {
+      localStorage.removeItem(dbName + '-ps');
+    }
+
     verifyUnsavedPareto(instance, true, problemSettings);
     if (numberOfExecutions > 1) moea.method.ga.deactivateLog();
     progress.next(metrics.length);
 
-    metricsLoop(method, progress, metrics, instance, dbName, problemSettings).then(function () {
+    metricsLoop(method, progress, metrics, instance, shouldRememberPS, dbName, problemSettings).then(function () {
       report = moea.help.report.createReport(metrics);
       printReport(report, method, instance);
       verifyUnsavedPareto(instance, false, problemSettings);
@@ -111,6 +137,18 @@
       getProblemName: {type: 'function', params: 'problem'},
       getDBName: {type: 'function', params: 'problem, scenario, method'}
     });
+  }
+
+  function printSolutionSets(dbName) {
+    let psSet = loadParetoSet(dbName);
+    let str = '';
+    _.forEach(psSet, function (ps, index) {
+      _.forEach(ps, function (solution) {
+        str += solution.join(' ') + '\n';
+      });
+      if (index < psSet.length - 1) str += '#\n';
+    });
+    document.body.innerHTML += '<pre>' + str + '</pre>';
   }
 
   function getFormattedResults(type, problems, scenarios, methods, properties, shouldPrintNames, problemSettings) {
@@ -149,7 +187,8 @@
   window.moea = window.moea || {};
   _.set(moea, 'problem.generic.experiment', {
     run: run,
-    getFormattedResults: getFormattedResults
+    getFormattedResults: getFormattedResults,
+    printSolutionSets: printSolutionSets
   });
 
 }());

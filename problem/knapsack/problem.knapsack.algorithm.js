@@ -9,6 +9,8 @@
     6: 5
   };
 
+  const LMT = 808;
+
   var methods = {
     nsga: moea.method.nsga.main.execute,
     nsga3: moea.method.nsga3.main.execute,
@@ -22,8 +24,10 @@
     aemmd: moea.method.aemmd.main.execute,
     psobinary: moea.method.psobinary.main.execute,
     manyAco: moea.method.manyAco.mkp.main.execute,
+    manyAcoSde: moea.method.manyAco.mkp.main.execute,
     dynamic: moea.method.dynamic.mkp.main.execute,
     simpleAco: moea.method.simpleAco.mkp.main.execute,
+    moacsBp: moea.method.moacsBp.mkp.main.execute
   };
 
   function createHeuristics(profitMatrix, weights) {
@@ -48,7 +52,7 @@
     var config = {
       global: {
         populationSize: 150,
-        archiveSize: 150,
+        archiveSize: LMT,
         numberOfGenerations: 100,
         shouldNormalize: false,
         elementsPerTable: 50,
@@ -139,8 +143,21 @@
         weights: instance.weights,
         capacity: instance.capacity,
         profitMatrix: instance.profitMatrix
+      },
+      moacsBp: {
+        alpha: 1,
+        beta: 4.3,
+        initialPheromoneValue: 0.1,
+        evaporationRate: 0.3,
+        weights: instance.weights,
+        capacity: instance.capacity,
+        profitMatrix: instance.profitMatrix,
+        heuristicFunctions: createHeuristics(instance.profitMatrix, instance.weights)
       }
     };
+
+    config.manyAcoSde = _.clone(config.manyAco);
+    config.manyAcoSde.archiveMaxSize = LMT;
 
     return _.merge(config.global, config[method]);
   }

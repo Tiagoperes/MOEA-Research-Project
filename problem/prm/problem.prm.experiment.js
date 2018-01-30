@@ -5,7 +5,7 @@
     return 'prm-exp-' + problem + '-' + network + '-' + method;
   }
 
-  function run(method, problem, network, numberOfExecutions, shouldReset) {
+  function run(method, problem, network, numberOfExecutions, shouldReset, shouldRememberPS) {
     var instance = moea.problem.prm.main.getInstance(problem, network),
         dbName = getDBName(problem, network, method),
         settings = {
@@ -17,7 +17,7 @@
           countInvalidSolutions: moea.problem.prm.main.countInvalidSolutions
         };
 
-    return moea.problem.generic.experiment.run(method, instance, numberOfExecutions, shouldReset, dbName, settings);
+    return moea.problem.generic.experiment.run(method, instance, numberOfExecutions, shouldReset, shouldRememberPS, dbName, settings);
   }
 
   function getFormattedResults(type, problem, network, methods, properties, shouldPrintNames) {
@@ -32,10 +32,16 @@
     return moea.problem.generic.experiment.getFormattedResults(type, problem, network, methods, properties, shouldPrintNames, settings);
   }
 
+  function printSolutionSets(method, problem, network) {
+    let dbName = getDBName(problem, network, method);
+    moea.problem.generic.experiment.printSolutionSets(dbName);
+  }
+
   window.moea = window.moea || {};
   _.set(moea, 'problem.prm.experiment', {
     run: run,
-    getFormattedResults: getFormattedResults
+    getFormattedResults: getFormattedResults,
+    printSolutionSets: printSolutionSets
   });
 
 }());

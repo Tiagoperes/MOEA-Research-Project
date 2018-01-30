@@ -2,6 +2,7 @@
   'use strict';
 
   const DISCONNECTION_RATE = 0.2;
+  const LIM = 90;
 
   const MOEAD_DIVISIONS = {
     4: 90,
@@ -53,14 +54,14 @@
     aemmtf: moea.method.aemmt.main.execute,
     aemmd: moea.method.aemmd.main.execute,
     psotree: moea.method.psotree.main.execute,
-    moacs: moea.method.moacs.main.execute,
-    mmmas: moea.method.mmmas.main.execute,
     mdtAco: moea.method.mdtAco.main.execute,
     mdtAcoParallel: moea.method.mdtAcoParallel.main.execute,
     prim: moea.method.prim.main.execute,
     simpleAco: moea.method.simpleAco.main.execute,
     multiAco: moea.method.multiAco.main.execute,
-    manyAco: moea.method.manyAco.main.execute
+    manyAco: moea.method.manyAco.main.execute,
+    manyAcoSde: moea.method.manyAco.main.execute,
+    moacsBp: moea.method.moacsBp.main.execute
   };
 
   function getConfig(method, instance) {
@@ -192,7 +193,7 @@
     var config = {
       global: {
         populationSize: 90,
-        archiveSize: 90,
+        archiveSize: LIM,
         numberOfGenerations: 100,
         numberOfThreads: 8,
         shouldNormalize: true,
@@ -262,42 +263,6 @@
         // combine: function (personalBest, localBest, globalBest) {
         //   return moea.problem.prm.recombination.pathCrossover.moveParticle(personalBest, localBest, globalBest, 0.333, 0.333, 0.333, net.root, net.destinations);
         // }
-      },
-      moacs: {
-        m: 5,
-        populationSize: 1000,
-        alpha: 1,
-        beta: 2,
-        initialPheromoneValue: 0.9,
-        trailPersistence: 0.3,
-        randomChoiceRate: 0.5,
-        pheromoneBounds: {min: 0.1, max: 0.9},
-        network: net,
-        heuristicFunctions: [
-          function (v, e) { return (1 - normalizedWeights[v][e].cost) || 0.000001; },
-          function (v, e) { return (1 - normalizedWeights[v][e].delay) || 0.000001; },
-          function (v, e) { return (1 - normalizedWeights[v][e].traffic) || 0.000001; },
-          function (v, e) { return (normalizedWeights[v][e].capacity) || 0.000001; }
-        ]
-        // heuristicFunctions: [
-        //   function (v, e) { return 1 / (normalizedWeights[v][e].cost || 0.000001); },
-        //   function (v, e) { return 1 / (normalizedWeights[v][e].delay || 0.000001); },
-        //   function (v, e) { return 1 / (normalizedWeights[v][e].traffic || 0.000001); }
-        // ]
-      },
-      mmmas: {
-        m: 5,
-        alpha: 1,
-        beta: 1,
-        initialPheromoneValue: 1,
-        trailPersistence: 0.6,
-        network: net,
-        heuristicFunctions: [
-          function (v, e) { return (1 - normalizedWeights[v][e].cost) || 0.000001; },
-          function (v, e) { return (1 - normalizedWeights[v][e].delay) || 0.000001; },
-          function (v, e) { return (1 - normalizedWeights[v][e].traffic) || 0.000001; },
-          function (v, e) { return (normalizedWeights[v][e].capacity) || 0.000001; }
-        ]
       },
       mdtAco: {
         // populationSize: 7,
@@ -412,10 +377,42 @@
       //     //   return normalizedWeights[v][e].capacity || 0.000001;
       //     // }
       //   ]
+      },
+      moacsBp: {
+        alpha: 1,
+        beta: 2,
+        initialPheromoneValue: 0.1,
+        evaporationRate: 0.3,
+        network: net,
+        heuristicFunctions: _.map(problemWeights, function (name) {
+          if (name !== 'capacity') {
+            return function (v, e) {
+              return (1 - normalizedWeights[v][e][name]) || 0.000001;
+            };
+          } else {
+            return function (v, e) {
+              return (normalizedWeights[v][e].capacity) || 0.000001;
+            };
+          }
+        })
       }
+      //   heuristicFunctions: _.map(problemWeights, function (name) {
+      //     if (name !== 'capacity') {
+      //       return function (v, e) {
+      //         return (1 / normalizedWeights[v][e][name]) || 0.000001;
+      //       };
+      //     } else {
+      //       return function (v, e) {
+      //         return (normalizedWeights[v][e].capacity) || 0.000001;
+      //       };
+      //     }
+      //   })
+      // }
     };
 
     config.manyAco = config.multiAco;
+    config.manyAcoSde = _.clone(config.manyAco);
+    config.manyAcoSde.archiveMaxSize = LIM;
 
     return _.merge(config.global, config[method]);
   }

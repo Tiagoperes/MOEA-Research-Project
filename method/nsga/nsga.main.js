@@ -16,7 +16,7 @@
       let children = ga.generateOffspring(parents, settings);
       population = _.concat(population, children);
       fronts = moea.method.nsga.ranking.rank(population, 'evaluation');
-      population = select(fronts, settings.populationSize);
+      population = select(fronts, settings.archiveSize);
     }
 
     return _.map(fronts[0], 'solution');

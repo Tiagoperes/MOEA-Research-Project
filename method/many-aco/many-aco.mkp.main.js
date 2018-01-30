@@ -125,11 +125,97 @@
     // return population;
   }
 
-  function updateArchive(pheromoneArray, population) {
+  function findExtremePoints(archive) {
+    let numberOfObjectives = archive[0].evaluation.length;
+    let max = _.fill(new Array(numberOfObjectives), -Infinity);
+    let min = _.fill(new Array(numberOfObjectives), Infinity);
+    _.forEach(archive, function (individual) {
+      _.forEach(individual.evaluation, function (value, index) {
+        if (value > max[index]) max[index] = value;
+        if (value < min[index]) min[index] = value;
+      })
+    });
+    return {min: min, max: max};
+  }
+
+  function getIdealPoints(archive, numberOfPoints) {
+    let numberOfObjectives = archive[0].evaluation.length;
+    let extremes = findExtremePoints(archive);
+    let points = [];
+    for (let i = 0; i < numberOfPoints; i++) {
+      let point = [];
+      for (let j = 0; j < numberOfObjectives; j++) {
+        point[j] = extremes.min[j] + i * (extremes.max[j] - extremes.min[j]) / (numberOfPoints - 1);
+      }
+      points.push(point);
+    }
+    return points;
+  }
+
+  function getSdePoint(compare, nonSdePoint) {
+    let sde = _.clone(nonSdePoint);
+    let maxDif = 0, maxDifIndex;
+    for (let i = 0; i < compare.length; i++) {
+      let dif = Math.abs(compare[i] - nonSdePoint);
+      if (dif > maxDif) {
+        maxDif = dif;
+        maxDifIndex = i;
+      }
+    }
+    sde[maxDifIndex] = compare[maxDifIndex];
+    return sde;
+  }
+
+  function findClosestPoint(archive, p) {
+    let minDist = Infinity, minDistIndex = 0;
+    _.forEach(archive, function (individual, index) {
+      // let sdeP = getSdePoint(individual.evaluation, p);
+      let dist = moea.help.distance.getEuclideanDistance(individual.evaluation, p);
+      if (dist < minDist) {
+        minDist = dist;
+        minDistIndex = index;
+      }
+    });
+    return archive[minDistIndex];
+  }
+
+  function truncate(archive, maxSize) {
+    if (archive.length <= maxSize) return archive;
+    // moea.method.spea.distance.calculateDistances(archive, 'evaluation', true);
+    // return moea.method.spea.selection.truncateArchive(archive, maxSize);
+
+    let ideal = getIdealPoints(archive, maxSize);
+    return _.map(ideal, function (p) {
+      let closest = findClosestPoint(archive, p);
+      _.pull(archive, closest);
+      return closest;
+    });
+  }
+
+  function updateArchive(pheromoneArray, population, archiveMaxSize) {
     let prev = pheromoneArray.archive;
     _.forEach(population, function (individual) {
       pheromoneArray.archive = moea.help.pareto.updateNonDominatedSet(pheromoneArray.archive, individual, 'evaluation');
+      if (archiveMaxSize && pheromoneArray.archive.length > archiveMaxSize) {
+        let indexMin, min = Infinity;
+        for (let i = 0; i < pheromoneArray.archive.length; i++) {
+          if (pheromoneArray.archive[i] !== individual) {
+            // let sde = getSdePoint(allDominationTable.archive[j].normalizedEvaluation, individual.normalizedEvaluation);
+            // let dist = moea.help.distance.getEuclideanDistance(allDominationTable.archive[j].normalizedEvaluation, sde);
+            let dist = moea.help.distance.getEuclideanDistance(pheromoneArray.archive[i].evaluation, individual.evaluation);
+            if (dist < min) {
+              min = dist;
+              indexMin = i;
+            }
+          }
+        }
+        pheromoneArray.archive.splice(indexMin, 1);
+      }
     });
+
+    // if (archiveMaxSize) {
+    //   pheromoneArray.archive = truncate(pheromoneArray.archive, archiveMaxSize);
+    // }
 
     return {
       added: _.difference(pheromoneArray.archive, prev),
@@ -180,7 +266,7 @@
     for (let i = 0; i < settings.numberOfGenerations; i++) {
       moea.method.ga.logGeneration(i, settings.numberOfGenerations);
       let population = createPopulation(pheromoneArrays, builder, sampleSize, settings);
-      let archiveDifference = updateArchive(allDominationArray, population);
+      let archiveDifference = updateArchive(allDominationArray, population, settings.archiveMaxSize);
       arrayIndex = updatePheromoneGroup(pheromoneArrays, archiveDifference, allPheromoneArrays, arrayIndex, settings);
     }
 

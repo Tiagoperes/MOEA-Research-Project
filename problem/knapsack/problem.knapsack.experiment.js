@@ -5,7 +5,7 @@
     return 'mkp-exp-' + objectives + '-' + items + '-' + method;
   }
 
-  function run(method, numberOfObjectives, numberOfItems, numberOfExecutions, shouldReset) {
+  function run(method, numberOfObjectives, numberOfItems, numberOfExecutions, shouldReset, shouldRememberPS) {
     var instance = moea.problem.knapsack.main.getInstance(numberOfObjectives, numberOfItems),
         dbName = getDBName(numberOfObjectives, numberOfItems, method),
         settings = {
@@ -17,7 +17,7 @@
           countInvalidSolutions: moea.problem.knapsack.main.countInvalidSolutions
         };
 
-    return moea.problem.generic.experiment.run(method, instance, numberOfExecutions, shouldReset, dbName, settings);
+    return moea.problem.generic.experiment.run(method, instance, numberOfExecutions, shouldReset, shouldRememberPS, dbName, settings);
   }
 
   function getFormattedResults(type, objectives, items, methods, properties, shouldPrintNames) {
@@ -32,10 +32,16 @@
     return moea.problem.generic.experiment.getFormattedResults(type, objectives, items, methods, properties, shouldPrintNames, settings);
   }
 
+  function printSolutionSets(method, numberOfObjectives, numberOfItems) {
+    let dbName = getDBName(numberOfObjectives, numberOfItems, method);
+    moea.problem.generic.experiment.printSolutionSets(dbName);
+  }
+
   window.moea = window.moea || {};
   _.set(moea, 'problem.knapsack.experiment', {
     run: run,
-    getFormattedResults: getFormattedResults
+    getFormattedResults: getFormattedResults,
+    printSolutionSets: printSolutionSets
   });
 
 }());

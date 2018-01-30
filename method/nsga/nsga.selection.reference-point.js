@@ -166,7 +166,7 @@
   function naturalSelection(fronts, maxPopulationSize, numberOfMeanPoints) {
     var population = [];
     var frontsToCheck = fronts;
-    while (population.length < maxPopulationSize) {
+    while (population.length < maxPopulationSize && frontsToCheck.length) {
       let front = _.head(frontsToCheck);
       if (population.length + front.length <= maxPopulationSize) {
         population = _.concat(population, front);

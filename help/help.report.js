@@ -175,7 +175,7 @@
   }
 
   function getMetrics(solutions, pareto, hvReference) {
-    var dominated = getDominatedSolutions(solutions, pareto),
+    let dominated = getDominatedSolutions(solutions, pareto),
         er = dominated.length / solutions.length,
         ps = (1 - er) * solutions.length;
 
@@ -185,7 +185,7 @@
       ps: ps,
       pcr: ps / pareto.length,
       sp: getSpread(solutions),
-      fsp: getFialhosSpread(solutions, pareto),
+      fsp: pareto.length ? getFialhosSpread(solutions, pareto) : null,
       ms: getMaximumSpread(solutions),
       hv: getHipervolume(solutions, hvReference)
     };

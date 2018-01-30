@@ -37,7 +37,19 @@
     }) / weights.length;
   }
 
+  // function depositPheromonesAccordingToSolutions(pheromones, population, evaporationRate, max, weights) {
+  //   _.forEach(population, function (individual) {
+  //     _.forEach(individual.solution.getVertices(), function (v) {
+  //       _.forEach(individual.solution.getEdges(v), function (e) {
+  //         pheromones[v][e] += (1 - getWeightsMean(weights, v, e)) * evaporationRate;
+  //         if (pheromones[v][e] > max) pheromones[v][e] = max;
+  //       });
+  //     });
+  //   });
+  // }
+
   function depositPheromonesAccordingToSolutions(pheromones, population, evaporationRate, max, weights) {
+
     _.forEach(population, function (individual) {
       _.forEach(individual.solution.getVertices(), function (v) {
         _.forEach(individual.solution.getEdges(v), function (e) {
@@ -142,6 +154,103 @@
     return _.minBy(_.filter(population, 'difscore'), 'difscore');
   }
 
+  function findExtremePoints(archive) {
+    let numberOfObjectives = archive[0].evaluation.length;
+    let max = _.fill(new Array(numberOfObjectives), -Infinity);
+    let min = _.fill(new Array(numberOfObjectives), Infinity);
+    _.forEach(archive, function (individual) {
+      _.forEach(individual.evaluation, function (value, index) {
+        if (value > max[index]) max[index] = value;
+        if (value < min[index]) min[index] = value;
+      })
+    });
+    return {min: min, max: max};
+  }
+
+  function getIdealPoints(archive, numberOfPoints) {
+    let numberOfObjectives = archive[0].evaluation.length;
+    let extremes = findExtremePoints(archive);
+    let points = [];
+    for (let i = 0; i < numberOfPoints; i++) {
+      let point = [];
+      for (let j = 0; j < numberOfObjectives; j++) {
+        point[j] = extremes.min[j] + i * (extremes.max[j] - extremes.min[j]) / (numberOfPoints - 1);
+      }
+      points.push(point);
+    }
+    return points;
+  }
+
+  function getSdePoint(compare, nonSdePoint) {
+    let sde = _.clone(nonSdePoint);
+    let maxDif = 0, maxDifIndex;
+    for (let i = 0; i < compare.length; i++) {
+      let dif = Math.abs(compare[i] - nonSdePoint[i]);
+      if (dif > maxDif) {
+        maxDif = dif;
+        maxDifIndex = i;
+      }
+    }
+    sde[maxDifIndex] = compare[maxDifIndex];
+    return sde;
+  }
+
+  function findClosestPoint(archive, p) {
+    let minDist = Infinity, minDistIndex = 0;
+    _.forEach(archive, function (individual, index) {
+      let sdeP = getSdePoint(individual.normalizedEvaluation, p);
+      let dist = moea.help.distance.getEuclideanDistance(individual.normalizedEvaluation, sdeP);
+      if (dist < minDist) {
+        minDist = dist;
+        minDistIndex = index;
+      }
+    });
+    return archive[minDistIndex];
+  }
+
+  function truncate(archive, maxSize) {
+    if (archive.length <= maxSize) return archive;
+
+    /*moea.help.normalization.normalize([], archive, moea.help.normalization.initializeExtremes(archive[0].evaluation.length));
+    moea.method.spea.distance.calculateDistances(archive, 'normalizedEvaluation', true);
+    return moea.method.spea.selection.truncateArchive(archive, maxSize);*/
+
+    // return moea.method.nsga.selection.referencePoint.select([archive], maxSize, 7);
+
+    // let ideal = getIdealPoints(archive, maxSize);
+    // return _.map(ideal, function (p) {
+    //   let closest = findClosestPoint(archive, p);
+    //   _.pull(archive, closest);
+    //   return closest;
+    // });
+
+    // return _.sample(archive, maxSize);
+
+    moea.help.normalization.normalize([], archive, moea.help.normalization.initializeExtremes(archive[0].evaluation.length));
+    let axis = _.random(0, archive[0].evaluation.length - 1);
+    let exceeding = archive.length - maxSize;
+    let references;
+    if (exceeding > 1) {
+      let ordered = _.orderBy(archive, function (individual) {
+        return individual.evaluation[axis];
+      });
+      references = [ordered[0]];
+      for (let i = 1; i <= exceeding - 2; i++) {
+        references.push(ordered[Math.floor(i * (ordered.length - 1) / (exceeding - 1))]);
+      }
+      references.push(_.last(ordered));
+    } else {
+      references = [_.sample(archive)];
+    }
+
+    _.forEach(references, function (r) {
+      let toRemove = findClosestPoint(archive, r.normalizedEvaluation);
+      _.pull(archive, toRemove);
+    });
+
+    return archive;
+  }
+
   function run(settings) {
     var tableIndex = 5,
         allPheromoneTables = createPheromoneTables(settings.objectives.length, settings.network.graph.size().vertices, 0.1, settings.beta),
@@ -164,9 +273,32 @@
       // population = filter(population, settings.randomize, settings.objectives);
 
       let prev = allDominationTable.archive;
+
+      if (settings.archiveMaxSize) {
+        moea.help.normalization.normalize(allDominationTable.archive, population, moea.help.normalization.initializeExtremes(population[0].evaluation.length));
+      }
+
       _.forEach(population, function (individual) {
         allDominationTable.archive = moea.help.pareto.updateNonDominatedSet(allDominationTable.archive, individual, 'evaluation');
+        if (settings.archiveMaxSize && allDominationTable.archive.length > settings.archiveMaxSize) {
+          let indexMin, min = Infinity;
+          for (let j = 0; j < allDominationTable.archive.length; j++) {
+            if (allDominationTable.archive[j] !== individual) {
+              // let sde = getSdePoint(allDominationTable.archive[j].normalizedEvaluation, individual.normalizedEvaluation);
+              // let dist = moea.help.distance.getEuclideanDistance(allDominationTable.archive[j].normalizedEvaluation, sde);
+              let dist = moea.help.distance.getEuclideanDistance(allDominationTable.archive[j].normalizedEvaluation, individual.normalizedEvaluation);
+              if (dist < min) {
+                min = dist;
+                indexMin = j;
+              }
+            }
+          }
+          allDominationTable.archive.splice(indexMin, 1);
+        }
       });
+      // if (settings.archiveMaxSize) {
+      //   allDominationTable.archive = truncate(allDominationTable.archive, settings.archiveMaxSize);
+      // }
       let archiveDiff = {
         added: _.difference(allDominationTable.archive, prev),
         removed: _.difference(prev, allDominationTable.archive)
@@ -216,6 +348,9 @@
           table.multiplier += 0.1;
           if (table.convergence > MAX_TABLE_CONVERGENCE) {
             table.convergence = 0;
+            // for (let i = 0; i < pheromoneTables[index].values.length; i++) {
+            //   pheromoneTables[index].values[i] = _.fill(new Array(pheromoneTables[index].values.length), 0.1);
+            // }
             pheromoneTables[index] = allPheromoneTables[tableIndex % allPheromoneTables.length];
             tableIndex++;
           }
