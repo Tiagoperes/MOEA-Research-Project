@@ -184,38 +184,45 @@
     // moea.method.spea.distance.calculateDistances(archive, 'evaluation', true);
     // return moea.method.spea.selection.truncateArchive(archive, maxSize);
 
-    let ideal = getIdealPoints(archive, maxSize);
-    return _.map(ideal, function (p) {
-      let closest = findClosestPoint(archive, p);
-      _.pull(archive, closest);
-      return closest;
-    });
+    // let ideal = getIdealPoints(archive, maxSize);
+    // return _.map(ideal, function (p) {
+    //   let closest = findClosestPoint(archive, p);
+    //   _.pull(archive, closest);
+    //   return closest;
+    // });
+
+    // return _.sampleSize(archive, maxSize);
+
+    return _.drop(archive, archive.length - maxSize);
+
+    // return moea.method.nsga.selection.referencePoint.select([archive], maxSize, 7);
+
+    // let lambda = moea.method.nsga.vectorGenerator.createVectors(6, 0, archive[0].evaluation.length);
+    // return moea.method.nsga.selection.yuan.select([archive], maxSize, lambda, false);
   }
 
   function updateArchive(pheromoneArray, population, archiveMaxSize) {
     let prev = pheromoneArray.archive;
     _.forEach(population, function (individual) {
       pheromoneArray.archive = moea.help.pareto.updateNonDominatedSet(pheromoneArray.archive, individual, 'evaluation');
-      if (archiveMaxSize && pheromoneArray.archive.length > archiveMaxSize) {
-        let indexMin, min = Infinity;
-        for (let i = 0; i < pheromoneArray.archive.length; i++) {
-          if (pheromoneArray.archive[i] !== individual) {
-            // let sde = getSdePoint(allDominationTable.archive[j].normalizedEvaluation, individual.normalizedEvaluation);
-            // let dist = moea.help.distance.getEuclideanDistance(allDominationTable.archive[j].normalizedEvaluation, sde);
-            let dist = moea.help.distance.getEuclideanDistance(pheromoneArray.archive[i].evaluation, individual.evaluation);
-            if (dist < min) {
-              min = dist;
-              indexMin = i;
-            }
-          }
-        }
-        pheromoneArray.archive.splice(indexMin, 1);
-      }
+      // if (archiveMaxSize && pheromoneArray.archive.length > archiveMaxSize) {
+      //   let indexMin, min = Infinity;
+      //   for (let i = 0; i < pheromoneArray.archive.length; i++) {
+      //     if (pheromoneArray.archive[i] !== individual) {
+      //       let dist = moea.help.distance.getEuclideanDistance(pheromoneArray.archive[i].evaluation, individual.evaluation);
+      //       if (dist < min) {
+      //         min = dist;
+      //         indexMin = i;
+      //       }
+      //     }
+      //   }
+      //   pheromoneArray.archive.splice(indexMin, 1);
+      // }
     });
 
-    // if (archiveMaxSize) {
-    //   pheromoneArray.archive = truncate(pheromoneArray.archive, archiveMaxSize);
-    // }
+    if (archiveMaxSize) {
+      pheromoneArray.archive = truncate(pheromoneArray.archive, archiveMaxSize);
+    }
 
     return {
       added: _.difference(pheromoneArray.archive, prev),
@@ -261,7 +268,8 @@
         pheromoneArrays = _.slice(allPheromoneArrays, 0, arrayIndex),
         allDominationArray = _.last(allPheromoneArrays),
         builder = moea.method.manyAco.build.mkp,
-        sampleSize = Math.ceil((settings.sampling || 1) * settings.weights.length);
+      // sampleSize = Math.ceil((settings.sampling || 1) * settings.weights.length);
+        sampleSize = 10;
 
     for (let i = 0; i < settings.numberOfGenerations; i++) {
       moea.method.ga.logGeneration(i, settings.numberOfGenerations);

@@ -48,18 +48,19 @@
   function run(settings) {
     var pheromoneTable = createPheromoneTable(settings.network.graph.size().vertices, settings.initialPheromoneValue),
         builder = moea.method.simpleAco.build,
+      // builder = moea.method.simpleAco.build.baran,
         // builder = moea.method.simpleAco.build.mparents,
         // builder = moea.method.simpleAco.build.broader,
         // builder = moea.method.simpleAco.build.inverse,
         // builder = moea.method.simpleAco.build.mants,
         // builder = moea.method.simpleAco.build.sant,
-        sampleSize = 2000,
+        sampleSize = 10,
         // test = 10,
         betaMultiplier = 1.1,
         best, worst;
 
     for (let i = 0; i < settings.numberOfGenerations; i++) {
-      moea.method.ga.logGeneration(i, settings.numberOfGenerations);
+      // moea.method.ga.logGeneration(i, settings.numberOfGenerations);
 
       // if (!test) {
       //   console.log('reset');

@@ -9,7 +9,8 @@
     6: 5
   };
 
-  const LMT = 808;
+
+  const LMT = 350;
 
   var methods = {
     nsga: moea.method.nsga.main.execute,
@@ -27,7 +28,8 @@
     manyAcoSde: moea.method.manyAco.mkp.main.execute,
     dynamic: moea.method.dynamic.mkp.main.execute,
     simpleAco: moea.method.simpleAco.mkp.main.execute,
-    moacsBp: moea.method.moacsBp.mkp.main.execute
+    moacsBp: moea.method.moacsBp.mkp.main.execute,
+    moeadAco: moea.method.moeadAco.mkp.main.execute
   };
 
   function createHeuristics(profitMatrix, weights) {
@@ -149,6 +151,23 @@
         beta: 4.3,
         initialPheromoneValue: 0.1,
         evaporationRate: 0.3,
+        weights: instance.weights,
+        capacity: instance.capacity,
+        profitMatrix: instance.profitMatrix,
+        heuristicFunctions: createHeuristics(instance.profitMatrix, instance.weights)
+      },
+      moeadAco: {
+        // numberOfGenerations: 1,
+        alpha: 1,
+        beta: 4.3,
+        delta: 0,
+        elitismRate: 0,
+        sampleSize: 10,
+        numberOfDivisions: MOEAD_DIVISIONS[instance.objectives],
+        numberOfGroupDivisions: instance.objectives === 2 ? 8 : 3,
+        neighborhoodSize: 10,
+        evaporationRate: 0.95,
+        pheromoneBounds: {min: 0.1, max: 0.9},
         weights: instance.weights,
         capacity: instance.capacity,
         profitMatrix: instance.profitMatrix,

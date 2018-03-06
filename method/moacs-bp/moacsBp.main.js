@@ -48,21 +48,21 @@
 
   function run(settings) {
     let pheromones = createPheromoneStructure(settings.network.graph.size().vertices, settings.beta, settings.initialPheromoneValue),
-      builder = moea.method.manyAco.build,
-      // builder = moea.method.moacsBp.build,
+      // builder = moea.method.manyAco.build,
+      builder = moea.method.moacsBp.build,
       sampleSize = 10,
       archive = [];
 
     for (let i = 0; i < settings.numberOfGenerations; i++) {
       moea.method.ga.logGeneration(i, settings.numberOfGenerations);
 
-      let population = builder.buildSolutions(settings.populationSize, [pheromones], settings.heuristicFunctions,
-        settings.network.graph, settings.network.root, settings.network.destinations, sampleSize, settings.alpha,
-        0, settings.objectives);
+      // let population = builder.buildSolutions(settings.populationSize, [pheromones], settings.heuristicFunctions,
+      //   settings.network.graph, settings.network.root, settings.network.destinations, sampleSize, settings.alpha,
+      //   0, settings.objectives);
 
-      // let population = builder.buildSolutions(settings.populationSize, pheromones, settings.evaporationRate,
-      //   settings.initialPheromoneValue, settings.heuristicFunctions, settings.network.graph, settings.network.root,
-      //   settings.network.destinations, settings.alpha, settings.objectives);
+      let population = builder.buildSolutions(settings.populationSize, pheromones, settings.evaporationRate,
+        settings.initialPheromoneValue, settings.heuristicFunctions, settings.network.graph, settings.network.root,
+        settings.network.destinations, settings.alpha, settings.objectives);
 
       let updatedArchive = updateArchive(archive, population);
       if (archive === updatedArchive) {
