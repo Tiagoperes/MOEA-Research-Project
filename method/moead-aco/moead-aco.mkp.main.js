@@ -1,15 +1,23 @@
 (function () {
   'use strict';
 
-  function createHeuristicFunction(w, heuristics) {
-    return function (item, budget) {
-      return _.reduce(heuristics, function (sum, h, index) {
-        return sum + h(item, budget) * ((index < w.length) ? w[index] : 1);
+  // function createHeuristicFunction(w, heuristics) {
+  //   return function (item, budget) {
+  //     return _.reduce(heuristics, function (sum, h, index) {
+  //       return sum + h(item, budget) * ((index < w.length) ? w[index] : 1);
+  //     }, 0);
+  //   }
+  // }
+
+  function createHeuristicFunction(w, profits, weights) {
+    return function (item) {
+      return _.reduce(profits, function (sum, profitArray, index) {
+        return sum + profitArray[item] * w[index] / weights[item];
       }, 0);
     }
   }
 
-  function createAnts(numberOfObjectives, numberOfItems, numberOfDivisions, neighborhoodSize, heuristics) {
+  function createAnts(numberOfObjectives, numberOfItems, numberOfDivisions, neighborhoodSize, heuristics, profits, itemWeights) {
     const ZERO_SOLUTION = {
       structure: _.fill(new Array(numberOfItems), 0),
       evaluation: _.fill(new Array(numberOfObjectives), 0),
@@ -20,7 +28,8 @@
     let ants = _.map(weights, function (w) {
       return {
         weights: w,
-        heuristic: createHeuristicFunction(w, heuristics),
+        // heuristic: createHeuristicFunction(w, heuristics),
+        heuristic: createHeuristicFunction(w, profits, itemWeights),
         currentSolution: ZERO_SOLUTION
       };
     });
@@ -83,7 +92,8 @@
 
   function getPheromoneIncrement(solutions, totalItemProfit, scalarizationFunction, weights) {
     return _.sumBy(solutions, function (solution) {
-      return scalarizationFunction(solution.evaluation, weights) / totalItemProfit;
+      // return scalarizationFunction(solution.evaluation, weights) / totalItemProfit;
+      return 1 / (totalItemProfit + scalarizationFunction(solution.evaluation, weights));
     }) / solutions.length;
   }
 
@@ -124,19 +134,21 @@
   function updatePheromoneBounds(groups, ants, pheromoneBounds, evaporationRate, totalItemProfit) {
     let numberOfNdSolutions = _.sumBy(_.map(groups, 'ndSet'), 'length');
     let minFitness = _.minBy(_.map(ants, 'currentSolution'), 'fitness').fitness;
-    pheromoneBounds.max = (numberOfNdSolutions + 1) / ((1 - evaporationRate) * (minFitness / totalItemProfit));
+    // pheromoneBounds.max = (numberOfNdSolutions + 1) / ((1 - evaporationRate) * (minFitness / totalItemProfit));
+    pheromoneBounds.max = (numberOfNdSolutions + 1) / ((1 - evaporationRate) * (totalItemProfit + minFitness));
     pheromoneBounds.min = (1/(2*ants.length)) * pheromoneBounds.max;
   }
 
   function run(settings) {
-    let ants = createAnts(settings.objectives.length, settings.weights.length, settings.numberOfDivisions, settings.neighborhoodSize, settings.heuristicFunctions),
+    let ants = createAnts(settings.objectives.length, settings.weights.length, settings.numberOfDivisions, settings.neighborhoodSize, settings.heuristicFunctions, settings.profitMatrix, settings.weights),
+        ngens = moea.method.ga.getNumberOfGenerations(ants.length, settings.comparisons),
         groups = createGroups(ants, settings.numberOfGroupDivisions, settings.pheromoneBounds.max),
         scalarizationFunction = moea.method.moead.scalarization.scalarizeWS,
         totalItemProfit = -_.sumBy(settings.profitMatrix, _.sum),
         archive = [];
 
-    for (let i = 0; i < settings.numberOfGenerations; i++) {
-      moea.method.ga.logGeneration(i, settings.numberOfGenerations);
+    for (let i = 0; i < ngens; i++) {
+      moea.method.ga.logGeneration(i, ngens);
       moea.method.moeadAco.build.mkp.buildSolutions(groups, settings.weights, settings.capacity, settings.sampleSize, settings.alpha, settings.beta, settings.delta, settings.elitismRate, settings.objectives);
       archive = updateArchiveAndGroupsNdSets(ants, groups, archive);
       updatePheromones(groups, settings.evaporationRate, settings.pheromoneBounds, totalItemProfit, scalarizationFunction);

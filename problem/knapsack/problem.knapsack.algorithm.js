@@ -158,6 +158,7 @@
       },
       moeadAco: {
         // numberOfGenerations: 1,
+        comparisons: 15000,
         alpha: 1,
         beta: 4.3,
         delta: 0,

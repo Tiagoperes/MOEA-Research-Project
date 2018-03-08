@@ -61,7 +61,8 @@
     multiAco: moea.method.multiAco.main.execute,
     manyAco: moea.method.manyAco.main.execute,
     manyAcoSde: moea.method.manyAco.main.execute,
-    moacsBp: moea.method.moacsBp.main.execute
+    moacsBp: moea.method.moacsBp.main.execute,
+    moeadAco: moea.method.moeadAco.mrp.main.execute
   };
 
   function getConfig(method, instance) {
@@ -395,6 +396,17 @@
             };
           }
         })
+      },
+      moeadAco: {
+        comparisons: 9000,
+        delta: 0.2,
+        elitismRate: 0.9,
+        sampleSize: 10,
+        numberOfDivisions: MOEAD_DIVISIONS[instance.problem],
+        numberOfGroupDivisions: prm.getObjectives(instance).length === 2 ? 8 : 3,
+        neighborhoodSize: 10,
+        evaporationRate: 0.95,
+        pheromoneBounds: {min: 0.1, max: 0.9},
       }
       //   heuristicFunctions: _.map(problemWeights, function (name) {
       //     if (name !== 'capacity') {
@@ -413,6 +425,7 @@
     config.manyAco = config.multiAco;
     config.manyAcoSde = _.clone(config.manyAco);
     config.manyAcoSde.archiveMaxSize = LIM;
+    config.moeadAco = _.merge(_.clone(config.manyAco), config.moeadAco);
 
     return _.merge(config.global, config[method]);
   }
