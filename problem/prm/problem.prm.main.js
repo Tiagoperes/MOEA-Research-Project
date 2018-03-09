@@ -165,7 +165,7 @@
 
   function getInstance(problem, network) {
     var instance = {
-      network: moea.problem.prm.instances['rede' + network],
+      network: _.cloneDeep(moea.problem.prm.instances['rede' + network]),
       problem: problem,
       pareto: moea.problem.prm.paretos[network][problem - 1],
       toString: function () {

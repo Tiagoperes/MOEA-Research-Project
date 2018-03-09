@@ -34,7 +34,7 @@
     localStorage.setItem(dbName + '-ps', LZString.compress(JSON.stringify(db)));
   }
 
-  function getMetricsForMethod(method, instance, shouldRememberPS, dbName, problemSettings) {
+  function getMetricsForMethod(method, instance, problemSettings) {
     var runAlgorithm =  Promise.resolve(problemSettings.runAlgorithm(method, instance)),
         objectives = problemSettings.getObjectives(instance),
         worst = problemSettings.getWorst();
@@ -47,7 +47,6 @@
       if (invalid > 0) throw Error(invalid + ' invalid solutions!');
 
       try {
-        if (shouldRememberPS) saveParetoSet(dbName, uniqueInOS);
         return moea.help.report.getMetrics(uniqueInOS, instance.pareto, worst);
       } catch (e) {
         if (e instanceof moea.help.pareto.IncompleteParetoException) {
@@ -60,8 +59,8 @@
     });
   }
 
-  function updateMetricsWithOneMoreRun(metrics, method, instance, progress, shouldRememberPS, dbName, problemSettings) {
-    return getMetricsForMethod(method, instance, shouldRememberPS, dbName, problemSettings).then(function (result) {
+  function updateMetricsWithOneMoreRun(metrics, method, instance, progress, problemSettings) {
+    return getMetricsForMethod(method, instance, problemSettings).then(function (result) {
       metrics.push(result);
       progress.next();
     });
@@ -95,16 +94,16 @@
     });
   }
 
-  function metricsLoop(method, progress, metrics, instance, shouldRememberPS, dbName, problemSettings) {
+  function metricsLoop(method, progress, metrics, instance, problemSettings) {
     if (!progress.isComplete()) {
-      return updateMetricsWithOneMoreRun(metrics, method, instance, progress, shouldRememberPS, dbName, problemSettings).then(function () {
-        return metricsLoop(method, progress, metrics, instance, shouldRememberPS, dbName, problemSettings);
+      return updateMetricsWithOneMoreRun(metrics, method, instance, progress, problemSettings).then(function () {
+        return metricsLoop(method, progress, metrics, instance, problemSettings);
       });
     }
     return Promise.resolve();
   }
 
-  function run(method, instance, numberOfExecutions, shouldReset, shouldRememberPS, dbName, problemSettings) {
+  function run(method, instance, numberOfExecutions, shouldReset, dbName, problemSettings) {
     var metrics, progress, report, time = new Date().getTime();
 
     console.log('%cseedrandom: using seed "' + Math.getRandomizationSeed() + '". To change, call Math.seedrandom(yourSeed).', 'color: blue');
@@ -113,15 +112,11 @@
     metrics = moea.help.database.create(dbName, shouldReset);
     progress = moea.help.progress.create(numberOfExecutions);
 
-    if (shouldReset) {
-      localStorage.removeItem(dbName + '-ps');
-    }
-
     verifyUnsavedPareto(instance, true, problemSettings);
     if (numberOfExecutions > 1) moea.method.ga.deactivateLog();
     progress.next(metrics.length);
 
-    metricsLoop(method, progress, metrics, instance, shouldRememberPS, dbName, problemSettings).then(function () {
+    metricsLoop(method, progress, metrics, instance, dbName, problemSettings).then(function () {
       report = moea.help.report.createReport(metrics);
       printReport(report, method, instance);
       verifyUnsavedPareto(instance, false, problemSettings);
@@ -184,11 +179,49 @@
     return str;
   }
 
+  function createDownloadButton(dbName, str) {
+    document.body.innerHTML += '<a href="data:text/plain;charset=utf-8,' + encodeURIComponent(str) + '" download="' + dbName + '.txt"><button>' + dbName + '</button></a>';
+  }
+
+  function computeSolutions(method, instance, numberOfExecutions, shouldReset, dbName, problemSettings) {
+    let str = '',
+        objectives = problemSettings.getObjectives(instance),
+        progress = moea.help.progress.create(numberOfExecutions);
+
+    if (shouldReset) {
+      localStorage.removeItem(dbName + '-ps');
+    } else {
+      str = localStorage[dbName + '-ps'];
+      progress.next(_.filter(s, _.partial(_.isEqual, _, '#')).length);
+    }
+
+    if (numberOfExecutions > 1) moea.method.ga.deactivateLog();
+
+    while (!progress.isComplete()) {
+      let solutions = problemSettings.runAlgorithm(method, instance),
+          invalid = problemSettings.countInvalidSolutions(solutions, instance),
+          evaluations = _.map(solutions, _.partial(moea.help.pareto.getSolutionInObjectiveSpace, _, objectives, true)),
+          uniqueInOS = _.uniqWith(evaluations, _.isEqual);
+
+      if (invalid > 0) throw Error(invalid + ' invalid solutions!');
+      str += '#\r\n';
+      _.forEach(uniqueInOS, function (s) {
+        str += s.join(' ') + '\r\n';
+      });
+      localStorage[dbName + '-ps'] = str;
+      progress.next();
+    }
+
+    str += '#';
+    createDownloadButton(dbName, str);
+  }
+
   window.moea = window.moea || {};
   _.set(moea, 'problem.generic.experiment', {
     run: run,
     getFormattedResults: getFormattedResults,
-    printSolutionSets: printSolutionSets
+    printSolutionSets: printSolutionSets,
+    computeSolutions: computeSolutions
   });
 
 }());
