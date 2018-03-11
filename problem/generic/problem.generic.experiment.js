@@ -180,6 +180,8 @@
   }
 
   function createDownloadButton(dbName, str) {
+    window.__download = window.__download || {};
+    window.__download[dbName] = str;
     document.body.innerHTML += '<a href="data:text/plain;charset=utf-8,' + encodeURIComponent(str) + '" download="' + dbName + '.txt"><button>' + dbName + '</button></a>';
   }
 
@@ -192,7 +194,7 @@
       localStorage.removeItem(dbName + '-ps');
     } else {
       str = localStorage[dbName + '-ps'];
-      progress.next(_.filter(s, _.partial(_.isEqual, _, '#')).length);
+      progress.next(_.filter(str, _.partial(_.isEqual, _, '#')).length);
     }
 
     if (numberOfExecutions > 1) moea.method.ga.deactivateLog();
@@ -208,7 +210,12 @@
       _.forEach(uniqueInOS, function (s) {
         str += s.join(' ') + '\r\n';
       });
-      localStorage[dbName + '-ps'] = str;
+      try {
+        localStorage[dbName + '-ps'] = str;
+      } catch(e) {
+        console.log('Attention: localstorage is full!');
+      }
+
       progress.next();
     }
 

@@ -10,7 +10,18 @@
   };
 
 
-  const LMT = 350;
+  const ARCHIVE_SIZE = {
+    default: 150,
+    o4i50: 600,
+    o5i50: 1400,
+    o6i50: 4500,
+    o4i100: 1300,
+    o5i100: 3200,
+    o6i100: 3400,
+    o4i200: 1500,
+    o5i200: 3000,
+    o6i200: 3200,
+  };
 
   var methods = {
     nsga: moea.method.nsga.main.execute,
@@ -54,7 +65,7 @@
     var config = {
       global: {
         populationSize: 150,
-        archiveSize: LMT,
+        archiveSize: ARCHIVE_SIZE['o' + instance.objectives + 'i' + instance.items] || ARCHIVE_SIZE.default,
         numberOfGenerations: 100,
         shouldNormalize: false,
         elementsPerTable: 50,
@@ -177,7 +188,7 @@
     };
 
     config.manyAcoSde = _.clone(config.manyAco);
-    config.manyAcoSde.archiveMaxSize = LMT;
+    config.manyAcoSde.archiveMaxSize = ARCHIVE_SIZE['o' + instance.objectives + 'i' + instance.items] || ARCHIVE_SIZE.default;
 
     return _.merge(config.global, config[method]);
   }

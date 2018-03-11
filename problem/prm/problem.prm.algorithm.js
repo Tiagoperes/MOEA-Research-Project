@@ -2,7 +2,6 @@
   'use strict';
 
   const DISCONNECTION_RATE = 0.2;
-  const LIM = 90;
 
   const MOEAD_DIVISIONS = {
     4: 90,
@@ -10,6 +9,19 @@
     6: 6,
     7: 6,
     8: 6
+  };
+
+  const ARCHIVE_SIZE = {
+    default: 90,
+    p6r5: 90,
+    p7r5: 250,
+    p8r5: 400,
+    p6r6: 90,
+    p7r6: 200,
+    p8r6: 350,
+    p6r7: 90,
+    p7r7: 100,
+    p8r7: 250
   };
 
   // window.debugCross = true;
@@ -194,7 +206,7 @@
     var config = {
       global: {
         populationSize: 90,
-        archiveSize: LIM,
+        archiveSize: ARCHIVE_SIZE['p' + instance.problem + 'r' + instance.network.name] || ARCHIVE_SIZE.default,
         numberOfGenerations: 100,
         numberOfThreads: 8,
         shouldNormalize: true,
@@ -424,7 +436,7 @@
 
     config.manyAco = config.multiAco;
     config.manyAcoSde = _.clone(config.manyAco);
-    config.manyAcoSde.archiveMaxSize = LIM;
+    config.manyAcoSde.archiveMaxSize = ARCHIVE_SIZE['p' + instance.problem + 'r' + instance.network.name] || ARCHIVE_SIZE.default;
     config.moeadAco = _.merge(_.clone(config.manyAco), config.moeadAco);
 
     return _.merge(config.global, config[method]);
